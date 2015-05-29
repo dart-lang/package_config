@@ -4,10 +4,10 @@
 
 library package_config.packages_impl_vm;
 
-import "packages_impl_html.dart";
-import "dart:io" show Directory;
 import "dart:collection" show UnmodifiableMapView;
+import "dart:io" show Directory;
 import "package:path/path.dart" as path;
+import "packages_impl_html.dart";
 
 /// A [Packages] implementation based on a local directory.
 class FilePackagesDirectoryPackages extends PackagesBase {
