@@ -4,7 +4,7 @@
 
 library package_config.packages;
 
-import "src/packages_impl_html.dart";
+import "src/packages_impl.dart";
 
 /// A package resolution strategy.
 ///
@@ -23,14 +23,6 @@ abstract class Packages {
   /// This constant object is returned by [find] above if no
   /// package resolution strategy is found.
   static const Packages noPackages = const NoPackages();
-
-  /// Create a `Packages` object based on a map from package name to base URI.
-  ///
-  /// The resulting `Packages` object will resolve package URIs by using this
-  /// map.
-  /// There is no validation of the map containing only valid package names,
-  factory Packages(Map<String, Uri> packageMapping) =>
-      new MapPackages(packageMapping);
 
   /// Resolve a package URI into a non-package URI.
   ///

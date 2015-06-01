@@ -2,12 +2,14 @@
 // for details. All rights reserved. Use of this source code is governed by a
 // BSD-style license that can be found in the LICENSE file.
 
-library package_config.packages_impl_vm;
+/// Implementations of [Packages] that can only be used in server based
+/// applications.
+library package_config.packages_io_impl;
 
 import "dart:collection" show UnmodifiableMapView;
 import "dart:io" show Directory;
 import "package:path/path.dart" as path;
-import "packages_impl_html.dart";
+import "packages_impl.dart";
 
 /// A [Packages] implementation based on a local directory.
 class FilePackagesDirectoryPackages extends PackagesBase {
@@ -23,9 +25,7 @@ class FilePackagesDirectoryPackages extends PackagesBase {
     .map((e) => path.basename(e.path));
   }
 
-  Iterable<String> get packages {
-    return _listPackageNames();
-  }
+  Iterable<String> get packages => _listPackageNames();
 
   Map<String, Uri> asMap() {
     var result = <String, Uri>{};
