@@ -7,7 +7,9 @@ library package_config.discovery;
 import "dart:async";
 import "dart:io";
 import "dart:typed_data" show Uint8List;
+
 import "package:path/path.dart" as path;
+
 import "packages.dart";
 import "packages_file.dart" as pkgfile show parse;
 import "src/packages_impl.dart";
