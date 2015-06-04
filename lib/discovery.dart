@@ -5,9 +5,9 @@
 library package_config.discovery;
 
 import "dart:async";
-import "dart:io" show Directory, File, FileSystemEntity;
+import "dart:io";
+import "dart:typed_data" show Uint8List;
 import "package:path/path.dart" as path;
-import "package:http/http.dart" as http;
 import "packages.dart";
 import "packages_file.dart" as pkgfile show parse;
 import "src/packages_impl.dart";
@@ -152,10 +152,30 @@ Future<Packages> findPackagesFromNonFile(Uri nonFileUri,
   });
 }
 
-/// Fetches a file using the http library.
+/// Fetches a file over http.
 Future<List<int>> _httpGet(Uri uri) {
-  return http.get(uri).then((http.Response response) {
-    if (response.statusCode == 200) return response.bodyBytes;
-    throw 0;  // The error message isn't being used for anything.
+  HttpClient client = new HttpClient();
+  return client.getUrl(uri)
+  .then((HttpClientRequest request) => request.close())
+  .then((HttpClientResponse response) {
+    if (response.statusCode != HttpStatus.OK) {
+      String msg = 'Failure getting $uri: '
+      '${response.statusCode} ${response.reasonPhrase}';
+      throw msg;
+    }
+    return response.toList();
+  })
+  .then((List<List<int>> splitContent) {
+    int totalLength = splitContent.fold(0, (int old, List list) {
+      return old + list.length;
+    });
+    Uint8List result = new Uint8List(totalLength);
+    int offset = 0;
+    for (List<int> contentPart in splitContent) {
+      result.setRange(
+          offset, offset + contentPart.length, contentPart);
+      offset += contentPart.length;
+    }
+    return result;
   });
 }
