@@ -5,7 +5,6 @@
 import "dart:io";
 import "dart:convert";
 
-import "package:path/path.dart" as path;
 import "package:test/test.dart";
 
 import "package:package_config_x/src/packages_file.dart" as packages;
