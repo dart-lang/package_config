@@ -98,12 +98,15 @@ String checkValidPackageUri(Uri packageUri) {
 
 /// Checks whether [version] is a valid Dart language version string.
 ///
-/// The format is (as RegExp) `(0|[1-9]\d+)\.(0|[1-9]\d+)`.
+/// The format is (as RegExp) `^(0|[1-9]\d+)\.(0|[1-9]\d+)$`.
 ///
 /// Returns the position of the first invalid character, or -1 if
 /// the string is valid.
 /// If the string is terminated early, the result is the length of the string.
 int checkValidVersionNumber(String version) {
+  if (version == null) {
+    return 0;
+  }
   int index = 0;
   int dotsSeen = 0;
   outer:
@@ -123,6 +126,7 @@ int checkValidVersionNumber(String version) {
             dotsSeen = 1;
             continue outer;
           }
+          return index - 1;
         }
         if (dotsSeen > 0) return -1;
         return index;

@@ -4,23 +4,38 @@
 
 import "dart:io";
 
-import "package:package_config/package_config.dart";
-import "package:path/path.dart" as path;
+import "package:package_config_x/package_config.dart";
 import "package:test/test.dart";
+
+import "src/util.dart";
 
 const emptyDir = <String, Object>{};
 
 main() {
+  return;
   fileGroup("basic", {
     ".packages": packagesFile,
     ".dart_tool": {
       "package_config.json": packageConfigJsonFile,
     },
-    "foo": {".packages": packagesFile},
-    "bar": {
-      "packages": {"foo": emptyDir, "bar": emptyDir, "baz": emptyDir}
+    "foo": {
+      ".packages": packagesFile,
+      ".dart_tool": emptyDir,
     },
-    "baz": {}
+    "bar": {
+      "packages": {
+        // Package directory no longer supported.
+        "foo": emptyDir,
+        "bar": emptyDir,
+        "baz": emptyDir,
+      }
+    },
+    "packages": {
+      "foo": emptyDir,
+      "bar": emptyDir,
+      "baz": emptyDir,
+    },
+    "baz": emptyDir,
   }, (Directory directory) {
     test("find in current dir", () {
       var result = findPackageConfig(directory);
@@ -28,21 +43,31 @@ main() {
       expect(result.packages.map((x) => x.name),
           unorderedEquals(["foo", "bar", "baz"]));
     });
+
+    test("find from subdir", () {
+      var subdir = subDir(directory, "baz");
+      // Should find the same configuration as the previous test.
+      var result = findPackageConfig(subdir);
+      expect(result.version, 2);
+      expect(result.packages.map((x) => x.name),
+          unorderedEquals(["foo", "bar", "baz"]));
+    });
+
     var dirUri = new Uri.directory(directory.path);
     PackageContext ctx = PackageContext.findAll(directory);
     PackageContext root = ctx[directory];
     expect(root, same(ctx));
     validatePackagesFile(root.packageConfig, dirUri);
-    var fooDir = sub(directory, "foo");
+    var fooDir = subDir(directory, "foo");
     PackageContext foo = ctx[fooDir];
     expect(identical(root, foo), isFalse);
     validatePackagesFile(foo.packageConfig, dirUri.resolve("foo/"));
-    var barDir = sub(directory, "bar");
-    PackageContext bar = ctx[sub(directory, "bar")];
+    var barDir = subDir(directory, "bar");
+    PackageContext bar = ctx[subDir(directory, "bar")];
     validatePackagesDir(bar.packageConfig, dirUri.resolve("bar/"));
-    PackageContext barbar = ctx[sub(barDir, "bar")];
+    PackageContext barbar = ctx[subDir(barDir, "bar")];
     expect(barbar, same(bar)); // inherited.
-    PackageContext baz = ctx[sub(directory, "baz")];
+    PackageContext baz = ctx[subDir(directory, "baz")];
     expect(baz, same(root)); // inherited.
 
     var map = ctx.asMap();
@@ -52,9 +77,6 @@ main() {
   });
 }
 
-Directory sub(Directory parent, String dirName) {
-  return new Directory(path.join(parent.path, dirName));
-}
 
 const packagesFile = """
 # A comment
@@ -100,51 +122,6 @@ Uri pkg(String packageName, String packagePath) {
   return new Uri(scheme: "package", path: path);
 }
 
-/// Create a directory structure from [description] and runs [fileTests].
-///
-/// Description is a map, each key is a file entry. If the value is a map,
-/// it's a sub-dir, otherwise it's a file and the value is the content
-/// as a string.
-void fileGroup(
-    String name, Map<String, Object> description, void fileTests(Directory directory)) {
-  group(name, () {
-    Directory tempDir = Directory.systemTemp.createTempSync("pkgcfgtest");
-    setUp(() {
-      _createFiles(tempDir, description);
-    });
-    tearDown(() {
-      tempDir.deleteSync(recursive: true);
-    });
-    fileTests(tempDir);
-  });
-}
-
-/// Creates a set of files under a new temporary directory.
-/// Returns the temporary directory.
-///
-/// The [description] is a map from file names to content.
-/// If the content is again a map, it represents a subdirectory
-/// with the content as description.
-/// Otherwise the content should be a string,
-/// which is written to the file as UTF-8.
-Directory createTestFiles(Map<String, Object> description) {
-  var target = Directory.systemTemp.createTempSync("pkgcfgtest");
-  _createFiles(target, description);
-  return target;
-}
-
-// Creates temporary files in the target directory.
-void _createFiles(Directory target, Map<String, Object> description) {
-  description.forEach((name, content) {
-    var entryName = path.join(target.path, name);
-    if (content is Map<String, Object>) {
-      _createFiles(Directory(entryName)..createSync(), content);
-    } else {
-      File(entryName).writeAsStringSync(content, flush: true);
-    }
-  });
-}
-
 const String packageConfigJsonFile = r"""
 {
   "configVersion": 2,
@@ -154,7 +131,8 @@ const String packageConfigJsonFile = r"""
 }
 """;
 
-const packageConfigJson = {
+const packageConfigJson = r"""
+{
   "configVersion": 2,
   "packages": [
     {
@@ -163,4 +141,5 @@ const packageConfigJson = {
       "packageUri": "lib/",
     },
   ]
-};
+}
+""";
