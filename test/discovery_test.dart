@@ -20,18 +20,18 @@ baz:packages/baz/
 const packageConfigFile = """
 {
   "configVersion": 2,
-  "package": [
+  "packages": [
     {
       "name": "foo",
-      "rootUri": "file:///dart/packages/foo/",
+      "rootUri": "file:///dart/packages/foo/"
     },
     {
       "name": "bar",
-      "rootUri": "/dart/packages/bar/",
+      "rootUri": "/dart/packages/bar/"
     },
     {
       "name": "baz",
-      "rootUri": "../packages/baz/",
+      "rootUri": "../packages/baz/"
     }
   ],
   "extra": [42]
@@ -116,20 +116,21 @@ main() {
 
   group("loadPackageConfig", () {
     // Load a specific files
-    fileGroup("package_config.json", {
-      ".packages": packagesFile,
-      ".dart_tool": {
-        "package_config.json": packageConfigFile,
-      }
-    }, (Directory directory) {
-      test("directly", () {
+    group("package_config.json", () {
+      var files = {
+        ".packages": packagesFile,
+        ".dart_tool": {
+          "package_config.json": packageConfigFile,
+        },
+      };
+      fileTest("directly", files, (directory) {
         File file =
             dirFile(subDir(directory, ".dart_tool"), "package_config.json");
         PackageConfig config = loadPackageConfig(file);
         expect(config.version, 2);
         validatePackagesFile(config, directory);
       });
-      test("indirectly through .packages", () {
+      fileTest("indirectly through .packages", files, (directory) {
         File file = dirFile(directory, ".packages");
         PackageConfig config = loadPackageConfig(file);
         expect(config.version, 2);
@@ -139,18 +140,22 @@ main() {
 
     fileTest("package_config.json non-default name", {
       ".packages": packagesFile,
-      "pheldagriff": packageConfigFile,
+      "subdir": {
+        "pheldagriff": packageConfigFile,
+      },
     }, (Directory directory) {
-      File file = dirFile(directory, "pheldagriff");
+      File file = dirFile(directory, "subdir/pheldagriff");
       PackageConfig config = loadPackageConfig(file);
       expect(config.version, 2);
       validatePackagesFile(config, directory);
     });
 
     fileTest("package_config.json named .packages", {
-      ".packages": packageConfigFile,
+      "subdir": {
+        ".packages": packageConfigFile,
+      },
     }, (Directory directory) {
-      File file = dirFile(directory, ".packages");
+      File file = dirFile(directory, "subdir/.packages");
       PackageConfig config = loadPackageConfig(file);
       expect(config.version, 2);
       validatePackagesFile(config, directory);

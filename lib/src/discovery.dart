@@ -54,6 +54,7 @@ PackageConfig/*?*/ findPackageConfig(Directory baseDirectory,
     // Check in cwd(/..)+/
     var parentDirectory = directory.parent;
     if (parentDirectory.path == directory.path) break;
+    directory = parentDirectory;
   }
   return null;
 }

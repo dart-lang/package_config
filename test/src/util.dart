@@ -15,19 +15,7 @@ import "package:test/test.dart";
 /// Introduces a group to hold the [setUp]/[tearDown] logic.
 void fileTest(String name, Map<String, Object> description,
     void fileTest(Directory directory)) {
-  fileGroup("file-test", description, (Directory directory) {
-    test(name, () => fileTest(directory));
-  });
-}
-
-/// Create a directory structure from [description] and runs [fileTests].
-///
-/// Description is a map, each key is a file entry. If the value is a map,
-/// it's a sub-dir, otherwise it's a file and the value is the content
-/// as a string.
-void fileGroup(String name, Map<String, Object> description,
-    void fileTests(Directory directory)) {
-  group(name, () {
+  group("file-test", () {
     Directory tempDir = Directory.systemTemp.createTempSync("pkgcfgtest");
     setUp(() {
       _createFiles(tempDir, description);
@@ -35,7 +23,7 @@ void fileGroup(String name, Map<String, Object> description,
     tearDown(() {
       tempDir.deleteSync(recursive: true);
     });
-    fileTests(tempDir);
+    test(name, () => fileTest(tempDir));
   });
 }
 
@@ -67,7 +55,7 @@ void _createFiles(Directory target, Map<Object, Object> description) {
 
 /// Creates a [Directory] for a subdirectory of [parent].
 Directory subDir(Directory parent, String dirName) =>
-    Directory(path.join(parent.path, dirName));
+    Directory(path.joinAll([parent.path, ... dirName.split("/")]));
 
 /// Creates a [File] for an entry in the [directory] directory.
 File dirFile(Directory directory, String fileName) =>
