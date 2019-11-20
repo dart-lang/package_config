@@ -10,7 +10,7 @@ import "package:test/test.dart";
 /// Creates a directory structure from [description] and runs [fileTest].
 ///
 /// Description is a map, each key is a file entry. If the value is a map,
-/// it's a sub-directory, otherwise it's a file and the value is the content
+/// it's a subdirectory, otherwise it's a file and the value is the content
 /// as a string.
 /// Introduces a group to hold the [setUp]/[tearDown] logic.
 void fileTest(String name, Map<String, Object> description,

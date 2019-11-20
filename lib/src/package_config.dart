@@ -94,7 +94,7 @@ abstract class Package {
   /// with no query or fragment parth and a path starting and ending with `/`.
   /// The [packageUriRoot], if provided, must be either an absolute
   /// directory URI or a relative URI reference which is then resolved
-  /// relative to [root]. It must then also be a sub-directory of [root],
+  /// relative to [root]. It must then also be a subdirectory of [root],
   /// or the same directory.
   /// If [languageVersion] is supplied, it must be a valid Dart language
   /// version, which means two decimal integer literals separated by a `.`,

@@ -3,10 +3,10 @@
 // BSD-style license that can be found in the LICENSE file.
 
 /// Analyse a directory structure and find packages resolvers for each
-/// sub-directory.
+/// subdirectory.
 ///
 /// The resolvers are generally the same that would be found by using
-/// the `discovery.dart` library on each sub-directory in turn,
+/// the `discovery.dart` library on each subdirectory in turn,
 /// but more efficiently.
 library package_config.discovery_analysis;
 
@@ -20,7 +20,7 @@ import "discovery.dart";
 
 /// Associates a [PackageConfig] with a directory.
 ///
-/// The package resolution applies to the directory and any sub-directory
+/// The package resolution applies to the directory and any subdirectory
 /// that doesn't have its own overriding child [PackageContext].
 abstract class PackageContext {
   /// The directory which introduced the [packageCOnfig] resolver.
@@ -37,7 +37,7 @@ abstract class PackageContext {
   /// The [subdirectory] must be inside [directory].
   PackageConfig operator [](Directory subdirectory);
 
-  /// Child immediate contexts that apply to sub-directories of [directory].
+  /// Child immediate contexts that apply to subdirectories of [directory].
   Iterable<PackageContext> get children;
 
   /// A map from directory to package resolver.
@@ -62,7 +62,7 @@ abstract class PackageContext {
   /// If [onError] is supplied, the error that caused loading to fail
   /// is reported to that function, otherwise it's ignored.
   ///
-  /// If [directoryFilter] is provided, each sub-directory is passed to this
+  /// If [directoryFilter] is provided, each subdirectory is passed to this
   /// function, and if it returns `false`, the subdirectory is skipped in
   /// the analysis. If it returns `true`, the subdirectory is recursively
   /// analysed to find package configurations.
