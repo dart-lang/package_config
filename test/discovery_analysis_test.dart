@@ -9,107 +9,88 @@ import "package:test/test.dart";
 
 import "src/util.dart";
 
-const emptyDir = <String, Object>{};
-
 main() {
-  return;
-  fileGroup("basic", {
-    ".packages": packagesFile,
-    ".dart_tool": {
-      "package_config.json": packageConfigJsonFile,
-    },
-    "foo": {
+  const emptyDir = <String, Object>{}; // To avoid repeating the types.
+  var files = {
+    "root": {
       ".packages": packagesFile,
-      ".dart_tool": emptyDir,
-    },
-    "bar": {
-      "packages": {
-        // Package directory no longer supported.
-        "foo": emptyDir,
-        "bar": emptyDir,
-        "baz": emptyDir,
-      }
-    },
-    "packages": {
-      "foo": emptyDir,
-      "bar": emptyDir,
-      "baz": emptyDir,
-    },
-    "baz": emptyDir,
-  }, (Directory directory) {
-    test("find in current dir", () {
-      var result = findPackageConfig(directory);
-      expect(result.version, 2);
-      expect(result.packages.map((x) => x.name),
-          unorderedEquals(["foo", "bar", "baz"]));
-    });
+      ".dart_tool": {
+        "package_config.json": packageConfigJsonFile, // Used.
+      },
+      "foo": {
+        ".packages": packagesFile, // Used.
+        ".dart_tool": emptyDir,
+      },
+      "bar": {
+        "packages": {
+          // Package directory no longer supported.
+          "foo": emptyDir,
+          "bar": emptyDir,
+          "baz": emptyDir,
+        }
+      },
+      ".baz": {
+        ".packages": packagesFile,
+        ".dart_tool": {
+          ".packages": packagesFile, // Ignored because inside .dart_tool
+          "package_config.json": packageConfigJsonFile, // Used
+        }
+      },
+    }
+  };
 
-    test("find from subdir", () {
-      var subdir = subDir(directory, "baz");
-      // Should find the same configuration as the previous test.
-      var result = findPackageConfig(subdir);
-      expect(result.version, 2);
-      expect(result.packages.map((x) => x.name),
-          unorderedEquals(["foo", "bar", "baz"]));
+  fileTest("basic", files, (Directory directory) {
+    PackageConfig rootConfig = PackageConfig([]);
+    PackageContext ctx =
+        PackageContext.findAll(directory, root: rootConfig, onError: (dir, e) {
+      fail("Error while reading context in $dir");
     });
+    PackageConfig topConfig = ctx[directory];
+    expect(topConfig, same(rootConfig));
+    // A package_config.json found inside ./root/.dart_tool
 
-    var dirUri = new Uri.directory(directory.path);
-    PackageContext ctx = PackageContext.findAll(directory);
-    PackageContext root = ctx[directory];
-    expect(root, same(ctx));
-    validatePackagesFile(root.packageConfig, dirUri);
-    var fooDir = subDir(directory, "foo");
-    PackageContext foo = ctx[fooDir];
-    expect(identical(root, foo), isFalse);
-    validatePackagesFile(foo.packageConfig, dirUri.resolve("foo/"));
-    var barDir = subDir(directory, "bar");
-    PackageContext bar = ctx[subDir(directory, "bar")];
-    validatePackagesDir(bar.packageConfig, dirUri.resolve("bar/"));
-    PackageContext barbar = ctx[subDir(barDir, "bar")];
-    expect(barbar, same(bar)); // inherited.
-    PackageContext baz = ctx[subDir(directory, "baz")];
-    expect(baz, same(root)); // inherited.
+    var rootDir = subdir(directory, "root");
+    PackageConfig root = ctx[rootDir];
+    //validatePackageConfig(root, rootDir, 2);
+
+    var fooDir = subdir(rootDir, "foo");
+    PackageConfig foo = ctx[fooDir];
+    validatePackageConfig(foo, fooDir, 1);
+
+    var barDir = subdir(rootDir, "bar");
+    PackageConfig bar = ctx[barDir];
+    expect(bar, same(root));
+
+    // Not ignored.
+    var bazDir = subdir(rootDir, ".baz");
+    PackageConfig baz = ctx[bazDir];
+    validatePackageConfig(baz, bazDir, 2);
+
+    var bazToolDir = subdir(bazDir, ".dart_tool");
+    PackageConfig bazTool = ctx[bazToolDir];
+    expect(bazTool, same(baz));
 
     var map = ctx.asMap();
-    expect(map.keys.map((dir) => dir.path),
-        unorderedEquals([directory.path, fooDir.path, barDir.path]));
+    expect(
+        map.keys.map((dir) => dir.path),
+        unorderedEquals(
+            [directory.path, rootDir.path, fooDir.path, bazDir.path]));
     return null;
   });
 }
 
-
-const packagesFile = """
-# A comment
-foo:file:///dart/packages/foo/
-bar:http://example.com/dart/packages/bar/
-baz:packages/baz/
-""";
-
-void validatePackagesFile(PackageConfig resolver, Uri location) {
-  expect(resolver, isNotNull);
-  expect(resolver.resolve(pkg("foo", "bar/baz")),
-      equals(Uri.parse("file:///dart/packages/foo/bar/baz")));
-  expect(resolver.resolve(pkg("bar", "baz/qux")),
-      equals(Uri.parse("http://example.com/dart/packages/bar/baz/qux")));
-  expect(resolver.resolve(pkg("baz", "qux/foo")),
-      equals(location.resolve("packages/baz/qux/foo")));
-  expect(resolver.packages, unorderedEquals(["foo", "bar", "baz"]));
-}
-
-void validatePackagesDir(PackageConfig resolver, Uri location) {
-  // Expect three packages: foo, bar and baz
-  expect(resolver, isNotNull);
-  expect(resolver.resolve(pkg("foo", "bar/baz")),
-      equals(location.resolve("packages/foo/bar/baz")));
-  expect(resolver.resolve(pkg("bar", "baz/qux")),
-      equals(location.resolve("packages/bar/baz/qux")));
-  expect(resolver.resolve(pkg("baz", "qux/foo")),
-      equals(location.resolve("packages/baz/qux/foo")));
-  if (location.scheme == "file") {
-    expect(resolver.packages, unorderedEquals(["foo", "bar", "baz"]));
-  } else {
-    expect(() => resolver.packages, throwsUnsupportedError);
-  }
+void validatePackageConfig(
+    PackageConfig config, Directory location, int version) {
+  Uri locationUri = Uri.directory(location.path);
+  expect(config, isNotNull);
+  expect(config.version, version);
+  expect({for (var p in config.packages) p.name}, {"foo", "bar", "baz"});
+  expect(config.resolve(pkg("foo", "bar/baz")),
+      equals(Uri.parse("file:///dart/foo/lib/bar/baz")));
+  expect(config.resolve(pkg("bar", "baz/qux")),
+      equals(Uri.parse("file:///dart/bar/lib/baz/qux")));
+  expect(config.resolve(pkg("baz", "qux/foo")),
+      equals(locationUri.resolve("lib/qux/foo")));
 }
 
 Uri pkg(String packageName, String packagePath) {
@@ -122,24 +103,34 @@ Uri pkg(String packageName, String packagePath) {
   return new Uri(scheme: "package", path: path);
 }
 
+const packagesFile = """
+# A comment
+foo:file:///dart/foo/lib/
+bar:/dart/bar/lib/
+baz:lib/
+""";
+
 const String packageConfigJsonFile = r"""
 {
   "configVersion": 2,
   "packages": [
-
-  ]
-}
-""";
-
-const packageConfigJson = r"""
-{
-  "configVersion": 2,
-  "packages": [
     {
-      "name": "package1",
-      "rootUri": "../../bar/",
+      "name": "foo",
+      "rootUri": "file:///dart/foo/",
       "packageUri": "lib/",
+      "languageVersion": "2.5"
     },
+    {
+      "name": "bar",
+      "rootUri": "/dart/bar/",
+      "packageUri": "lib/",
+      "languageVersion": "2.7"
+    },
+    {
+      "name": "baz",
+      "rootUri": "../",
+      "packageUri": "lib/"
+    }
   ]
 }
 """;

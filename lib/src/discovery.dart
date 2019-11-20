@@ -39,7 +39,7 @@ import "package_config_json.dart";
 /// If [extraData] is provided, and the loaded file is a `package_config.json`
 /// file, then any unknown JSON object entries in the main JSON object of the
 /// file are added to [extraData] with the same name.
-PackageConfig/*?*/ findPackageConfig(Directory baseDirectory,
+PackageConfig /*?*/ findPackageConfig(Directory baseDirectory,
     [Map<String, dynamic> /*?*/ extraData]) {
   var directory = baseDirectory;
   if (!directory.isAbsolute) directory = directory.absolute;
@@ -59,6 +59,15 @@ PackageConfig/*?*/ findPackageConfig(Directory baseDirectory,
   return null;
 }
 
+/// Finds a `.packages` or `.dart_tool/package_config.json` file in [directory].
+///
+/// Loads the file, if it is there, and returns the resulting [PackageConfig].
+/// Returns `null` if the file isn't there.
+/// Throws [FormatException] if a file is there but is not valid.
+///
+/// If [extraData] is supplied and the `package_config.json` contains extra
+/// entries in the top JSON object, those extra entries are stored into
+/// [extraData].
 PackageConfig /*?*/ findPackagConfigInDirectory(Directory directory,
     [Map<String, dynamic> /*?*/ extraData]) {
   var packageConfigFile = checkForPackageConfigJsonFile(directory);

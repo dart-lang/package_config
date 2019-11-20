@@ -87,7 +87,7 @@ main() {
         "script.dart": "main(){}",
       }
     }, (Directory directory) {
-      PackageConfig config = findPackageConfig(subDir(directory, "subdir/"));
+      PackageConfig config = findPackageConfig(subdir(directory, "subdir/"));
       expect(config.version, 2);
       validatePackagesFile(config, directory);
     });
@@ -98,7 +98,7 @@ main() {
       "subdir": {"script.dart": "main(){}"}
     }, (Directory directory) async {
       PackageConfig config;
-      config = findPackageConfig(subDir(directory, "subdir/"));
+      config = findPackageConfig(subdir(directory, "subdir/"));
       expect(config.version, 1);
       validatePackagesFile(config, directory);
     });
@@ -111,6 +111,38 @@ main() {
     }, (Directory directory) {
       PackageConfig config = findPackageConfig(directory);
       expect(config, null);
+    });
+
+    fileTest("invalid .packages", {
+      ".packages": "not a .packages file",
+    }, (Directory directory) {
+      expect(() => findPackageConfig(directory),
+          throwsA(TypeMatcher<FormatException>()));
+    });
+
+    fileTest("invalid .packages as JSON", {
+      ".packages": packageConfigFile,
+    }, (Directory directory) {
+      expect(() => findPackageConfig(directory),
+          throwsA(TypeMatcher<FormatException>()));
+    });
+
+    fileTest("invalid .packages", {
+      ".dart_tool": {
+        "package_config.json": "not a JSON file",
+      }
+    }, (Directory directory) {
+      expect(() => findPackageConfig(directory),
+          throwsA(TypeMatcher<FormatException>()));
+    });
+
+    fileTest("invalid .packages as INI", {
+      ".dart_tool": {
+        "package_config.json": packagesFile,
+      }
+    }, (Directory directory) {
+      expect(() => findPackageConfig(directory),
+          throwsA(TypeMatcher<FormatException>()));
     });
   });
 
@@ -125,7 +157,7 @@ main() {
       };
       fileTest("directly", files, (directory) {
         File file =
-            dirFile(subDir(directory, ".dart_tool"), "package_config.json");
+            dirFile(subdir(directory, ".dart_tool"), "package_config.json");
         PackageConfig config = loadPackageConfig(file);
         expect(config.version, 2);
         validatePackagesFile(config, directory);
@@ -214,4 +246,3 @@ main() {
     });
   });
 }
-

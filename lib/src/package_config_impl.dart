@@ -56,8 +56,8 @@ class SimplePackageConfig implements PackageConfig {
     // Check that no root URI is a prefix of another.
     if (result.length > 1) {
       // Uris cache their toString, so this is not as bad as it looks.
-      var rootUris = [...result.values]..sort(
-          (a, b) => a.root.toString().compareTo(b.root.toString()));
+      var rootUris = [...result.values]
+        ..sort((a, b) => a.root.toString().compareTo(b.root.toString()));
       var prev = rootUris[0];
       var prevRoot = prev.root.toString();
       for (int i = 1; i < rootUris.length; i++) {

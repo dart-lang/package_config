@@ -30,8 +30,8 @@ abstract class PackageConfig {
   /// overlapping root directories.
   ///
   /// The version of the resulting configuration is always [maxVersion].
-  factory PackageConfig(Iterable<Package> packages)
-      => SimplePackageConfig(maxVersion, packages);
+  factory PackageConfig(Iterable<Package> packages) =>
+      SimplePackageConfig(maxVersion, packages);
 
   /// The configuration version number.
   ///
@@ -82,7 +82,7 @@ abstract class PackageConfig {
   ///
   /// Returns the a package URI which [resolve] will convert to [nonPackageUri],
   /// if any such URI exists. Returns `null` if no such package URI exists.
-  Uri/*?*/ toPackageUri(Uri nonPackageUri);
+  Uri /*?*/ toPackageUri(Uri nonPackageUri);
 }
 
 /// Configuration data for a single package.

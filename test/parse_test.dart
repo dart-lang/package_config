@@ -240,8 +240,8 @@ void main() {
           testThrows("empty", '{$cfg,"packages":[{"name":"",$root}]}');
           testThrows("one-dot", '{$cfg,"packages":[{"name":".",$root}]}');
           testThrows("two-dot", '{$cfg,"packages":[{"name":"..",$root}]}');
-          testThrows("invalid char '\\'",
-              '{$cfg,"packages":[{"name":"\\",$root}]}');
+          testThrows(
+              "invalid char '\\'", '{$cfg,"packages":[{"name":"\\",$root}]}');
           testThrows(
               "invalid char ':'", '{$cfg,"packages":[{"name":":",$root}]}');
           testThrows(
@@ -253,23 +253,21 @@ void main() {
           testThrows("null", '{$cfg,"packages":[{$name,"rootUri":null}]}');
           testThrows("num", '{$cfg,"packages":[{$name,"rootUri":1}]}');
           testThrows("object", '{$cfg,"packages":[{$name,"rootUri":{}}]}');
-          testThrows(
-              "fragment", '{$cfg,"packages":[{$name,"rootUri":"x/#"}]}');
+          testThrows("fragment", '{$cfg,"packages":[{$name,"rootUri":"x/#"}]}');
           testThrows("query", '{$cfg,"packages":[{$name,"rootUri":"x/?"}]}');
           testThrows("package-URI",
               '{$cfg,"packages":[{$name,"rootUri":"package:x/x/"}]}');
         });
         group("package-URI root:", () {
-          testThrows("null",
-              '{$cfg,"packages":[{$name,$root,"packageUri":null}]}');
           testThrows(
-              "num", '{$cfg,"packages":[{$name,$root,"packageUri":1}]}');
-          testThrows("object",
-              '{$cfg,"packages":[{$name,$root,"packageUri":{}}]}');
+              "null", '{$cfg,"packages":[{$name,$root,"packageUri":null}]}');
+          testThrows("num", '{$cfg,"packages":[{$name,$root,"packageUri":1}]}');
+          testThrows(
+              "object", '{$cfg,"packages":[{$name,$root,"packageUri":{}}]}');
           testThrows("fragment",
               '{$cfg,"packages":[{$name,$root,"packageUri":"x/#"}]}');
-          testThrows("query",
-              '{$cfg,"packages":[{$name,$root,"packageUri":"x/?"}]}');
+          testThrows(
+              "query", '{$cfg,"packages":[{$name,$root,"packageUri":"x/?"}]}');
           testThrows("package: URI",
               '{$cfg,"packages":[{$name,$root,"packageUri":"package:x/x/"}]}');
           testThrows("not inside root",
@@ -308,9 +306,10 @@ void main() {
           '{$cfg,"packages":[{$name,$root},{$name,"rootUri":"/other/"}]}');
       testThrows("same roots",
           '{$cfg,"packages":[{$name,$root},{"name":"bar",$root}]}');
-      testThrows("overlapping roots",
+      testThrows(
+          "overlapping roots",
           '{$cfg,"packages":[{$name,$root},'
-          '{"name":"bar","rootUri":"/foo/sub/"}]}');
+              '{"name":"bar","rootUri":"/foo/sub/"}]}');
     });
   });
 }

@@ -7,65 +7,88 @@
 ///
 /// The resolvers are generally the same that would be found by using
 /// the `discovery.dart` library on each sub-directory in turn,
-/// but more efficiently and with some heuristics for directories that
-/// wouldn't otherwise have a package resolution strategy, or that are
-/// determined to be "package directories" themselves.
-library package_config.discovery;
+/// but more efficiently.
+library package_config.discovery_analysis;
 
 import "dart:collection" show HashMap;
-import "dart:io" show Directory;
+import "dart:io" show Directory, Platform;
+
+import "package:path/path.dart" as path;
 
 import "package_config.dart";
 import "discovery.dart";
 
-/// Associates a [Packages] package resolution strategy with a directory.
+/// Associates a [PackageConfig] with a directory.
 ///
 /// The package resolution applies to the directory and any sub-directory
 /// that doesn't have its own overriding child [PackageContext].
 abstract class PackageContext {
-  /// The directory which introduced the [packages] resolver.
+  /// The directory which introduced the [packageCOnfig] resolver.
   Directory get directory;
 
-  /// The [PackageConfiguration] that applies to the directory.
+  /// The [PackageConfig] that applies to the directory.
   ///
   /// Introduced either by a `.dart_tool/package_config.json` file or a
   /// `.packages` file in the [directory].
   PackageConfig get packageConfig;
 
-  /// Child contexts that apply to sub-directories of [directory].
-  List<PackageContext> get children;
-
-  /// Look up the [PackageContext] that applies to a specific directory.
+  /// Look up the [PackageConfig] that applies to a specific directory.
   ///
-  /// The directory must be inside [directory].
-  PackageContext operator [](Directory directory);
+  /// The [subdirectory] must be inside [directory].
+  PackageConfig operator [](Directory subdirectory);
+
+  /// Child immediate contexts that apply to sub-directories of [directory].
+  Iterable<PackageContext> get children;
 
   /// A map from directory to package resolver.
   ///
-  /// Has an entry for this package context and for each child context
+  /// Has an entry for this package context and for each immediate child context
   /// contained in this one.
   Map<Directory, PackageConfig> asMap();
 
-  /// Analyze [directory] and sub-directories for package configurations.
+  /// Analyze [directory] and subdirectories for package configurations.
   ///
-  /// Returns a context mapping sub-directories to [Packages] objects.
+  /// Returns a context mapping subdirectories to [PackageConfig] objects.
   ///
   /// The analysis assumes that there are no package configuration files
   /// in a parent directory of `directory`.
   /// If there is, its corresponding [PackageConfig] object
   /// should be provided as [root].
+  ///
+  /// Each directory visited is checked for the presence of a `.packages`
+  /// or `.dart_tool/package_config.json` file. If such a file exists,
+  /// it is loaded. If loading fails, the directory is treated as if
+  /// no configuration was found.
+  /// If [onError] is supplied, the error that caused loading to fail
+  /// is reported to that function, otherwise it's ignored.
+  ///
+  /// If [directoryFilter] is provided, each sub-directory is passed to this
+  /// function, and if it returns `false`, the subdirectory is skipped in
+  /// the analysis. If it returns `true`, the subdirectory is recursively
+  /// analysed to find package configurations.
+  /// If [directoryFilter] is omitted, it defaults
+  /// to the [skipDartToolDir] filter.
+  /// To skip all directories starting with `.`, the [skipDotDir] filter
+  /// can be used.
   static PackageContext findAll(Directory directory,
-      {PackageConfig root: PackageConfig.empty}) {
+      {PackageConfig root = PackageConfig.empty,
+      bool directoryFilter(Directory subdir) = skipDartToolDir,
+      void onError(Directory directory, Object error)}) {
     if (!directory.existsSync()) {
       throw ArgumentError("Directory not found: $directory");
     }
+    directoryFilter ??= skipDartToolDir;
     var contexts = <PackageContext>[];
     void findRoots(Directory directory, List<PackageContext> contexts) {
-      PackageConfig /*?*/ packageConfig =
-          findPackagConfigInDirectory(directory);
+      PackageConfig /*?*/ packageConfig;
+      try {
+        packageConfig = findPackagConfigInDirectory(directory);
+      } catch (e) {
+        if (onError != null) onError(directory, e);
+      }
       List<PackageContext> subContexts = packageConfig == null ? contexts : [];
       for (var entry in directory.listSync()) {
-        if (entry is Directory) {
+        if (entry is Directory && directoryFilter(entry)) {
           findRoots(entry, subContexts);
         }
       }
@@ -81,6 +104,16 @@ abstract class PackageContext {
     }
     return _PackageContext(directory, root, contexts);
   }
+
+  /// A directory filter which includes all directories not named `.dart_tool`.
+  ///
+  /// This is the default filter used by [findAll].
+  static bool skipDartToolDir(Directory directory) =>
+      path.basename(directory.path) != ".dart_tool";
+
+  /// A directory filter which includes all directories not starting with `.`.
+  static bool skipDotDir(Directory directory) =>
+      !path.basename(directory.path).startsWith(".");
 }
 
 class _PackageContext implements PackageContext {
@@ -104,7 +137,7 @@ class _PackageContext implements PackageContext {
     return result;
   }
 
-  PackageContext operator [](Directory directory) {
+  PackageConfig operator [](Directory directory) {
     String path = directory.path;
     if (!path.startsWith(this.directory.path)) {
       throw ArgumentError("Not inside $path: $directory");
@@ -115,22 +148,22 @@ class _PackageContext implements PackageContext {
     List children = current.children;
     int i = 0;
     while (i < children.length) {
-      // TODO(lrn): Sort children and use binary search.
-      _PackageContext child = children[i];
+      _PackageContext child = children[i++];
       String childPath = child.directory.path;
-      if (_stringsAgree(path, childPath, deltaIndex, childPath.length)) {
-        deltaIndex = childPath.length;
-        if (deltaIndex == path.length) {
-          return child;
+      int childPathLength = childPath.length;
+      if (_stringsAgree(path, childPath, deltaIndex, childPathLength)) {
+        if (childPathLength == path.length) {
+          return child.packageConfig;
         }
-        current = child;
-        children = current.children;
-        i = 0;
-        continue;
+        if (path.startsWith(Platform.pathSeparator, childPathLength)) {
+          deltaIndex = childPathLength + 1;
+          current = child;
+          children = current.children;
+          i = 0;
+        }
       }
-      i++;
     }
-    return current;
+    return current.packageConfig;
   }
 
   static bool _stringsAgree(String a, String b, int start, int end) {
