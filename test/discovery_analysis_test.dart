@@ -4,7 +4,7 @@
 
 import "dart:io";
 
-import "package:package_config_x/package_config.dart";
+import "package:package_config/package_config.dart";
 import "package:test/test.dart";
 
 import "src/util.dart";
