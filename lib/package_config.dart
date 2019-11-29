@@ -29,9 +29,7 @@ export "src/discovery_analysis.dart" show PackageContext;
 /// If [extraData] is provided, and the loaded file is a `package_config.json`
 /// file, then any unknown JSON object entries in the main JSON object of the
 /// file are added to [extraData] with the same name.
-PackageConfig loadPackageConfig(File file,
-        [Map<String, dynamic> /*?*/ extraData]) =>
-    readAnyConfigFile(file, extraData);
+Future<PackageConfig> loadPackageConfig(File file) => readAnyConfigFile(file);
 
 /// Finds a package configuration relative to [directory].
 ///
@@ -49,9 +47,8 @@ PackageConfig loadPackageConfig(File file,
 /// If [extraData] is provided, and the loaded file is a `package_config.json`
 /// file, then any unknown JSON object entries in the main JSON object of the
 /// file are added to [extraData] with the same name.
-PackageConfig findPackageConfig(Directory directory,
-        [Map<String, dynamic> /*?*/ extraData]) =>
-    discover.findPackageConfig(directory, extraData);
+Future<PackageConfig> findPackageConfig(Directory directory) =>
+    discover.findPackageConfig(directory);
 
 /// Writes a package configuration to the provided directory.
 ///
@@ -71,7 +68,6 @@ PackageConfig findPackageConfig(Directory directory,
 /// This will stop happening eventually as the `.packages` file becomes
 /// discontinued.
 /// A comment is generated if `extraData` contains a `"generator"` entry.
-void savePackageConfig(PackageConfig configuration, Directory directory,
-    [Map<String, dynamic> extraData]) {
-  writePackageConfigJson(configuration, directory, extraData);
-}
+Future<void> savePackageConfig(
+        PackageConfig configuration, Directory directory) =>
+    writePackageConfigJson(configuration, directory);

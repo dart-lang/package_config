@@ -4,7 +4,7 @@
 
 import "dart:io";
 
-import "package:package_config/package_config.dart";
+import "package:package_config_2/package_config.dart";
 import "package:test/test.dart";
 
 import "src/util.dart";
@@ -39,10 +39,10 @@ main() {
     }
   };
 
-  fileTest("basic", files, (Directory directory) {
+  fileTest("basic", files, (Directory directory) async {
     PackageConfig rootConfig = PackageConfig([]);
-    PackageContext ctx =
-        PackageContext.findAll(directory, root: rootConfig, onError: (dir, e) {
+    PackageContext ctx = await PackageContext.findAll(directory,
+        root: rootConfig, onError: (dir, e) {
       fail("Error while reading context in $dir");
     });
     PackageConfig topConfig = ctx[directory];
@@ -69,13 +69,6 @@ main() {
     var bazToolDir = subdir(bazDir, ".dart_tool");
     PackageConfig bazTool = ctx[bazToolDir];
     expect(bazTool, same(baz));
-
-    var map = ctx.asMap();
-    expect(
-        map.keys.map((dir) => dir.path),
-        unorderedEquals(
-            [directory.path, rootDir.path, fooDir.path, bazDir.path]));
-    return null;
   });
 }
 

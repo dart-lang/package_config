@@ -7,8 +7,8 @@ import "dart:convert";
 
 import "package:test/test.dart";
 
-import "package:package_config/src/packages_file.dart" as packages;
-import "package:package_config/src/package_config_json.dart";
+import "package:package_config_2/src/packages_file.dart" as packages;
+import "package:package_config_2/src/package_config_json.dart";
 import "src/util.dart";
 
 void main() {
@@ -75,7 +75,8 @@ void main() {
               "name": "foo",
               "rootUri": "file:///foo/",
               "packageUri": "lib/",
-              "languageVersion": "2.5"
+              "languageVersion": "2.5",
+              "nonstandard": true
             },
             {
               "name": "bar",
@@ -93,11 +94,8 @@ void main() {
           "other": [42]
         }
         """;
-      var extraData = <String, Object>{};
-      var config = parsePackageConfigBytes(
-          utf8.encode(packageConfigFile),
-          File.fromUri(Uri.parse("file:///tmp/.dart_tool/file.dart")),
-          extraData);
+      var config = parsePackageConfigBytes(utf8.encode(packageConfigFile),
+          File.fromUri(Uri.parse("file:///tmp/.dart_tool/file.dart")));
       expect(config.version, 2);
       expect({for (var p in config.packages) p.name}, {"foo", "bar", "baz"});
 
@@ -113,12 +111,14 @@ void main() {
       expect(foo.root, Uri.parse("file:///foo/"));
       expect(foo.packageUriRoot, Uri.parse("file:///foo/lib/"));
       expect(foo.languageVersion, "2.5");
+      expect(foo.extraData, {"nonstandard": true});
 
       var bar = config["bar"];
       expect(bar, isNotNull);
       expect(bar.root, Uri.parse("file:///bar/"));
       expect(bar.packageUriRoot, Uri.parse("file:///bar/lib/"));
       expect(bar.languageVersion, "100.100");
+      expect(bar.extraData, null);
 
       var baz = config["baz"];
       expect(baz, isNotNull);
@@ -126,7 +126,7 @@ void main() {
       expect(baz.packageUriRoot, Uri.parse("file:///tmp/lib/"));
       expect(baz.languageVersion, null);
 
-      expect(extraData, {
+      expect(config.extraData, {
         "generator": "pub",
         "other": [42]
       });
@@ -160,11 +160,8 @@ void main() {
           "configVersion": 2
         }
         """;
-      var extraData = <String, Object>{};
-      var config = parsePackageConfigBytes(
-          utf8.encode(packageConfigFile),
-          File.fromUri(Uri.parse("file:///tmp/.dart_tool/file.dart")),
-          extraData);
+      var config = parsePackageConfigBytes(utf8.encode(packageConfigFile),
+          File.fromUri(Uri.parse("file:///tmp/.dart_tool/file.dart")));
       expect(config.version, 2);
       expect({for (var p in config.packages) p.name}, {"foo", "bar", "baz"});
 
@@ -174,7 +171,7 @@ void main() {
           Uri.parse("file:///bar/lib/bar.dart"));
       expect(config.resolve(pkg("baz", "baz.dart")),
           Uri.parse("file:///tmp/lib/baz.dart"));
-      expect(extraData, {
+      expect(config.extraData, {
         "generator": "pub",
         "other": [42]
       });

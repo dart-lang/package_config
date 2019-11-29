@@ -81,11 +81,11 @@ PackageConfig parse(List<int> source, Uri baseLocation) {
       throw FormatException(
           "Same package name occured more than once", source, start);
     }
-    packages.add(
-        SimplePackage(packageName, packageLocation, packageLocation, null));
+    packages.add(SimplePackage(
+        packageName, packageLocation, packageLocation, null, null));
     packageNames.add(packageName);
   }
-  return SimplePackageConfig(1, packages);
+  return SimplePackageConfig(1, packages, null);
 }
 
 /// Writes the configuration to a [StringSink].

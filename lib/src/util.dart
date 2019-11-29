@@ -1,4 +1,4 @@
-// Copyright (c) 2015, the Dart project authors.  Please see the AUTHORS file
+// Copyright (c) 2019, the Dart project authors.  Please see the AUTHORS file
 // for details. All rights reserved. Use of this source code is governed by a
 // BSD-style license that can be found in the LICENSE file.
 
@@ -169,10 +169,21 @@ bool isUriPrefix(Uri prefix, Uri path) {
   return path.toString().startsWith(prefix.toString());
 }
 
-/// Attempts to return a relative URI for [uri].
+/// Attempts to return a relative path-only URI for [uri].
 ///
-/// The result URI satisfies `baseUri.resolveUri(result) == uri`,
-/// but may be relative.
+/// First removes any query or fragment part from [uri].
+///
+/// If [uri] is already relative (has no scheme), it's returned as-is.
+/// If that is not desired, the caller can pass `baseUri.resolveUri(uri)`
+/// as the [uri] instead.
+///
+/// If the [uri] has a scheme or authority part which differs from
+/// the [baseUri], or if there is no overlap in the paths of the
+/// two URIs at all, the [uri] is returned as-is.
+///
+/// Otherwise the result is a path-only URI which satsifies
+/// `baseUri.resolveUri(result) == uri`,
+///
 /// The `baseUri` must be absolute.
 Uri relativizeUri(Uri uri, Uri baseUri) {
   assert(baseUri.isAbsolute);

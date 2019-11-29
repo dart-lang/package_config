@@ -1,4 +1,4 @@
-// Copyright (c) 2015, the Dart project authors.  Please see the AUTHORS file
+// Copyright (c) 2019, the Dart project authors.  Please see the AUTHORS file
 // for details. All rights reserved. Use of this source code is governed by a
 // BSD-style license that can be found in the LICENSE file.
 
@@ -6,7 +6,7 @@ library package_config.discovery_test;
 
 import "dart:io";
 import "package:test/test.dart";
-import "package:package_config/package_config.dart";
+import "package:package_config_2/package_config.dart";
 
 import "src/util.dart";
 
@@ -60,8 +60,8 @@ main() {
       ".dart_tool": {
         "package_config.json": packageConfigFile,
       }
-    }, (Directory directory) {
-      PackageConfig config = findPackageConfig(directory);
+    }, (Directory directory) async {
+      PackageConfig config = await findPackageConfig(directory);
       expect(config.version, 2); // Found package_config.json file.
       validatePackagesFile(config, directory);
     });
@@ -71,8 +71,8 @@ main() {
       ".packages": packagesFile,
       "script.dart": "main(){}",
       "packages": {"shouldNotBeFound": {}}
-    }, (Directory directory) {
-      PackageConfig config = findPackageConfig(directory);
+    }, (Directory directory) async {
+      PackageConfig config = await findPackageConfig(directory);
       expect(config.version, 1); // Found .packages file.
       validatePackagesFile(config, directory);
     });
@@ -86,8 +86,9 @@ main() {
       "subdir": {
         "script.dart": "main(){}",
       }
-    }, (Directory directory) {
-      PackageConfig config = findPackageConfig(subdir(directory, "subdir/"));
+    }, (Directory directory) async {
+      PackageConfig config =
+          await findPackageConfig(subdir(directory, "subdir/"));
       expect(config.version, 2);
       validatePackagesFile(config, directory);
     });
@@ -98,7 +99,7 @@ main() {
       "subdir": {"script.dart": "main(){}"}
     }, (Directory directory) async {
       PackageConfig config;
-      config = findPackageConfig(subdir(directory, "subdir/"));
+      config = await findPackageConfig(subdir(directory, "subdir/"));
       expect(config.version, 1);
       validatePackagesFile(config, directory);
     });
@@ -108,8 +109,8 @@ main() {
       "packages": {
         "foo": {},
       }
-    }, (Directory directory) {
-      PackageConfig config = findPackageConfig(directory);
+    }, (Directory directory) async {
+      PackageConfig config = await findPackageConfig(directory);
       expect(config, null);
     });
 
@@ -155,16 +156,17 @@ main() {
           "package_config.json": packageConfigFile,
         },
       };
-      fileTest("directly", files, (directory) {
+      fileTest("directly", files, (Directory directory) async {
         File file =
             dirFile(subdir(directory, ".dart_tool"), "package_config.json");
-        PackageConfig config = loadPackageConfig(file);
+        PackageConfig config = await loadPackageConfig(file);
         expect(config.version, 2);
         validatePackagesFile(config, directory);
       });
-      fileTest("indirectly through .packages", files, (directory) {
+      fileTest("indirectly through .packages", files,
+          (Directory directory) async {
         File file = dirFile(directory, ".packages");
-        PackageConfig config = loadPackageConfig(file);
+        PackageConfig config = await loadPackageConfig(file);
         expect(config.version, 2);
         validatePackagesFile(config, directory);
       });
@@ -175,9 +177,9 @@ main() {
       "subdir": {
         "pheldagriff": packageConfigFile,
       },
-    }, (Directory directory) {
+    }, (Directory directory) async {
       File file = dirFile(directory, "subdir/pheldagriff");
-      PackageConfig config = loadPackageConfig(file);
+      PackageConfig config = await loadPackageConfig(file);
       expect(config.version, 2);
       validatePackagesFile(config, directory);
     });
@@ -186,27 +188,27 @@ main() {
       "subdir": {
         ".packages": packageConfigFile,
       },
-    }, (Directory directory) {
+    }, (Directory directory) async {
       File file = dirFile(directory, "subdir/.packages");
-      PackageConfig config = loadPackageConfig(file);
+      PackageConfig config = await loadPackageConfig(file);
       expect(config.version, 2);
       validatePackagesFile(config, directory);
     });
 
     fileTest(".packages", {
       ".packages": packagesFile,
-    }, (Directory directory) {
+    }, (Directory directory) async {
       File file = dirFile(directory, ".packages");
-      PackageConfig config = loadPackageConfig(file);
+      PackageConfig config = await loadPackageConfig(file);
       expect(config.version, 1);
       validatePackagesFile(config, directory);
     });
 
     fileTest(".packages non-default name", {
       "pheldagriff": packagesFile,
-    }, (Directory directory) {
+    }, (Directory directory) async {
       File file = dirFile(directory, "pheldagriff");
-      PackageConfig config = loadPackageConfig(file);
+      PackageConfig config = await loadPackageConfig(file);
       expect(config.version, 1);
       validatePackagesFile(config, directory);
     });
@@ -230,9 +232,9 @@ main() {
       ".dart_tool": {
         "package_config.json": packageConfigFile,
       },
-    }, (Directory directory) {
+    }, (Directory directory) async {
       File file = dirFile(directory, "anyname");
-      PackageConfig config = loadPackageConfig(file);
+      PackageConfig config = await loadPackageConfig(file);
       expect(config.version, 2);
       validatePackagesFile(config, directory);
     });

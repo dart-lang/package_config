@@ -22,15 +22,18 @@ abstract class PackageConfig {
   /// is expected, but none have been specified or found.
   static const PackageConfig empty = const SimplePackageConfig.empty();
 
-  /// Creats a package configuration with the provided avilable [packages].
+  /// Creats a package configuration with the provided available [packages].
   ///
   /// The packages must be valid packages (valid package name, valid
   /// absolute directory URIs, valid language version, if any),
   /// and there must not be two packages with the same name or with
   /// overlapping root directories.
   ///
+  /// If supplied, the [extraData] will be available as the
+  /// [PackageConfig.extraData] of the created configuration.
+  ///
   /// The version of the resulting configuration is always [maxVersion].
-  factory PackageConfig(Iterable<Package> packages) =>
+  factory PackageConfig(Iterable<Package> packages, {dynamic extraData}) =>
       SimplePackageConfig(maxVersion, packages);
 
   /// The configuration version number.
@@ -83,6 +86,13 @@ abstract class PackageConfig {
   /// Returns the a package URI which [resolve] will convert to [nonPackageUri],
   /// if any such URI exists. Returns `null` if no such package URI exists.
   Uri /*?*/ toPackageUri(Uri nonPackageUri);
+
+  /// Extra data associated with the package configuration.
+  ///
+  /// The data may be in any format, depending on who introduced it.
+  /// The standard `packjage_config.json` file storage will only store
+  /// JSON-like list/map data structures.
+  dynamic get extraData;
 }
 
 /// Configuration data for a single package.
@@ -100,9 +110,13 @@ abstract class Package {
   /// version, which means two decimal integer literals separated by a `.`,
   /// where the integer literals have no leading zeros unless they are
   /// a single zero digit.
+  /// If [extraData] is supplied, it will be available as the
+  /// [Package.extraData] of the created package.
   factory Package(String name, Uri root,
-          {Uri /*?*/ packageUriRoot, String /*?*/ languageVersion}) =>
-      SimplePackage(name, root, packageUriRoot, languageVersion);
+          {Uri /*?*/ packageUriRoot,
+          String /*?*/ languageVersion,
+          dynamic extraData}) =>
+      SimplePackage(name, root, packageUriRoot, languageVersion, extraData);
 
   /// The package-name of the package.
   String get name;
@@ -142,4 +156,11 @@ abstract class Package {
   /// There is no whitespace allowed around the numerals.
   /// Valid version numbers include `2.5`, `3.0`, and `1234.5678`.
   String /*?*/ get languageVersion;
+
+  /// Extra data associated with the specific package.
+  ///
+  /// The data may be in any format, depending on who introduced it.
+  /// The standard `packjage_config.json` file storage will only store
+  /// JSON-like list/map data structures.
+  dynamic get extraData;
 }

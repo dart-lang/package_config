@@ -1,4 +1,4 @@
-// Copyright (c) 2015, the Dart project authors.  Please see the AUTHORS file
+// Copyright (c) 2019, the Dart project authors.  Please see the AUTHORS file
 // for details. All rights reserved. Use of this source code is governed by a
 // BSD-style license that can be found in the LICENSE file.
 
@@ -10,7 +10,6 @@
 /// but more efficiently.
 library package_config.discovery_analysis;
 
-import "dart:collection" show HashMap;
 import "dart:io" show Directory, Platform;
 
 import "package:path/path.dart" as path;
@@ -23,7 +22,7 @@ import "discovery.dart";
 /// The package resolution applies to the directory and any subdirectory
 /// that doesn't have its own overriding child [PackageContext].
 abstract class PackageContext {
-  /// The directory which introduced the [packageCOnfig] resolver.
+  /// The directory which introduced the [packageConfig] resolver.
   Directory get directory;
 
   /// The [PackageConfig] that applies to the directory.
@@ -39,12 +38,6 @@ abstract class PackageContext {
 
   /// Child immediate contexts that apply to subdirectories of [directory].
   Iterable<PackageContext> get children;
-
-  /// A map from directory to package resolver.
-  ///
-  /// Has an entry for this package context and for each immediate child context
-  /// contained in this one.
-  Map<Directory, PackageConfig> asMap();
 
   /// Analyze [directory] and subdirectories for package configurations.
   ///
@@ -70,26 +63,28 @@ abstract class PackageContext {
   /// to the [skipDartToolDir] filter.
   /// To skip all directories starting with `.`, the [skipDotDir] filter
   /// can be used.
-  static PackageContext findAll(Directory directory,
-      {PackageConfig root = PackageConfig.empty,
+  static Future<PackageContext> findAll(Directory directory,
+      {PackageConfig root,
       bool directoryFilter(Directory subdir) = skipDartToolDir,
-      void onError(Directory directory, Object error)}) {
+      void onError(Directory directory, Object error)}) async {
     if (!directory.existsSync()) {
       throw ArgumentError("Directory not found: $directory");
     }
+    root ??= PackageConfig.empty;
     directoryFilter ??= skipDartToolDir;
-    var contexts = <PackageContext>[];
-    void findRoots(Directory directory, List<PackageContext> contexts) {
+    var topContexts = <PackageContext>[];
+    Future<void> findRoots(
+        Directory directory, List<PackageContext> contexts) async {
       PackageConfig /*?*/ packageConfig;
       try {
-        packageConfig = findPackagConfigInDirectory(directory);
+        packageConfig = await findPackagConfigInDirectory(directory);
       } catch (e) {
         if (onError != null) onError(directory, e);
       }
       List<PackageContext> subContexts = packageConfig == null ? contexts : [];
-      for (var entry in directory.listSync()) {
+      await for (var entry in directory.list()) {
         if (entry is Directory && directoryFilter(entry)) {
-          findRoots(entry, subContexts);
+          await findRoots(entry, subContexts);
         }
       }
       if (packageConfig != null) {
@@ -97,12 +92,14 @@ abstract class PackageContext {
       }
     }
 
-    findRoots(directory, contexts);
-    // If the root is not itself context root, add a the wrapper context.
-    if (contexts.length == 1 && contexts[0].directory == directory) {
-      return contexts[0];
+    await findRoots(directory, topContexts);
+    // If the root is already a context root, just return it.
+    if (topContexts.length == 1 && topContexts[0].directory == directory) {
+      return topContexts[0];
     }
-    return _PackageContext(directory, root, contexts);
+    // Otherwise add a top-level context to contain the ones found in
+    // subdirectoris.
+    return _PackageContext(directory, root, topContexts);
   }
 
   /// A directory filter which includes all directories not named `.dart_tool`.
@@ -123,19 +120,6 @@ class _PackageContext implements PackageContext {
   _PackageContext(
       this.directory, this.packageConfig, List<PackageContext> children)
       : children = List<PackageContext>.unmodifiable(children);
-
-  Map<Directory, PackageConfig> asMap() {
-    var result = HashMap<Directory, PackageConfig>();
-    void recurse(_PackageContext current) {
-      result[current.directory] = current.packageConfig;
-      for (var child in current.children) {
-        recurse(child);
-      }
-    }
-
-    recurse(this);
-    return result;
-  }
 
   PackageConfig operator [](Directory directory) {
     String path = directory.path;

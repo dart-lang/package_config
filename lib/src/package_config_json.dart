@@ -9,15 +9,23 @@ import "dart:typed_data";
 import "package:path/path.dart" as path;
 
 import "package_config_impl.dart";
-import "packages_file.dart" as packagesfile;
+import "packages_file.dart" as packages_file;
 import "util.dart";
 
 const String _configVersionKey = "configVersion";
 const String _packagesKey = "packages";
+const List<String> _topNames = [_configVersionKey, _packagesKey];
 const String _nameKey = "name";
 const String _rootUriKey = "rootUri";
 const String _packageUriKey = "packageUri";
 const String _languageVersionKey = "languageVersion";
+const List<String> _packageNames = [
+  _nameKey,
+  _rootUriKey,
+  _packageUriKey,
+  _languageVersionKey
+];
+
 const String _generatedKey = "generated";
 const String _generatorKey = "generator";
 const String _generatorVersionKey = "generatorVersion";
@@ -32,9 +40,8 @@ const String _generatorVersionKey = "generatorVersion";
 /// reads that instead.
 ///
 /// The file must exist and be a normal file.
-PackageConfig readAnyConfigFile(File file,
-    [Map<String, dynamic> /*?*/ extraData]) {
-  var bytes = file.readAsBytesSync();
+Future<PackageConfig> readAnyConfigFile(File file) async {
+  var bytes = await file.readAsBytes();
   for (int i = 0; i < bytes.length; i++) {
     var char = bytes[i];
     if (char == 0x20 || char == 0x09 || char == 0x0a || char == 0x0d) {
@@ -43,7 +50,7 @@ PackageConfig readAnyConfigFile(File file,
     }
     if (char == 0x7b /*{*/) {
       // Probably JSON, definitely not .packages.
-      return parsePackageConfigBytes(bytes, file, extraData);
+      return parsePackageConfigBytes(bytes, file);
     }
     break;
   }
@@ -52,23 +59,21 @@ PackageConfig readAnyConfigFile(File file,
       path.join(path.dirname(file.path), ".dart_tool", "package_config.json"));
   if (alternateFile.existsSync()) {
     return parsePackageConfigBytes(
-        alternateFile.readAsBytesSync(), alternateFile, extraData);
+        await alternateFile.readAsBytes(), alternateFile);
   }
   return _parseDotPackagesConfig(bytes, file);
 }
 
-PackageConfig readPackageConfigJsonFile(File file,
-        [Map<String, dynamic> /*?*/ extraData]) =>
-    parsePackageConfigBytes(file.readAsBytesSync(), file, extraData);
+Future<PackageConfig> readPackageConfigJsonFile(File file) async =>
+    parsePackageConfigBytes(await file.readAsBytes(), file);
 
-PackageConfig readDotPackagesFile(File file) =>
-    packagesfile.parse(file.readAsBytesSync(), Uri.file(file.path));
+Future<PackageConfig> readDotPackagesFile(File file) async =>
+    packages_file.parse(await file.readAsBytes(), Uri.file(file.path));
 
-PackageConfig parsePackageConfigBytes(Uint8List bytes, File file,
-    [Map<String, dynamic> /*?*/ extraData]) {
+PackageConfig parsePackageConfigBytes(Uint8List bytes, File file) {
   // TODO(lrn): Make this simpler. Maybe parse directly from bytes.
   return parsePackageConfigJson(
-      json.fuse(utf8).decode(bytes), Uri.file(file.path), extraData);
+      json.fuse(utf8).decode(bytes), Uri.file(file.path));
 }
 
 /// Creates a [PackageConfig] from a parsed JSON-like object structure.
@@ -89,12 +94,11 @@ PackageConfig parsePackageConfigBytes(Uint8List bytes, File file,
 ///     where the integer numeral cannot have a sign, and can only have a
 ///     leading zero if the entire numeral is a single zero.
 ///
-/// All other properties are ignored.
+/// All other properties are stored in [extraData].
 ///
 /// The [baseLocation] is used as base URI to resolve the "rootUri"
 /// URI referencestring.
-PackageConfig parsePackageConfigJson(dynamic json, Uri baseLocation,
-    [Map<String, dynamic> /*?*/ extraData]) {
+PackageConfig parsePackageConfigJson(dynamic json, Uri baseLocation) {
   if (!baseLocation.hasScheme || baseLocation.isScheme("package")) {
     throw ArgumentError.value(baseLocation.toString(), "baseLocation",
         "Must be an absolute non-package: URI");
@@ -102,107 +106,105 @@ PackageConfig parsePackageConfigJson(dynamic json, Uri baseLocation,
   if (!baseLocation.path.endsWith("/")) {
     baseLocation = baseLocation.resolveUri(Uri(path: "."));
   }
-  var map = json;
-  if (map is Map<String, dynamic>) {
-    var version = map[_configVersionKey];
-    if (version is int && version > 0 && version <= PackageConfig.maxVersion) {
-      var packageList = map[_packagesKey];
-      if (packageList is List<dynamic>) {
-        List<Package> accumulator = [];
-        for (var packageEntry in packageList) {
-          if (packageEntry is Map<String, dynamic>) {
-            Object /*?*/ name = packageEntry[_nameKey];
-            if (name is String) {
-              Object /*?*/ root = packageEntry[_rootUriKey];
-              if (root is String) {
-                Uri rootUri = baseLocation.resolve(root);
-                Uri packageUriRootUri = rootUri;
-                Object /*?*/ packageUriRoot = packageEntry[_packageUriKey];
-                if (packageUriRoot != null ||
-                    packageEntry.containsKey(_packageUriKey)) {
-                  // The value is optional.
-                  if (packageUriRoot is String) {
-                    packageUriRootUri = rootUri.resolve(packageUriRoot);
-                  } else {
-                    throw FormatException(
-                        "Package $name's packageUri is not a string",
-                        packageUriRoot);
-                  }
-                }
-                Object /*?*/ languageVersion =
-                    packageEntry[_languageVersionKey];
-                if (packageEntry.containsKey(_languageVersionKey) &&
-                    languageVersion is! String) {
-                  throw FormatException(
-                      "Package $name's languageVersion is not a string",
-                      languageVersion);
-                }
-                Package package;
-                try {
-                  package = SimplePackage(
-                      name, rootUri, packageUriRootUri, languageVersion);
-                } on ArgumentError catch (e) {
-                  throw FormatException(e.message, e.invalidValue);
-                }
-                accumulator.add(package);
-                continue;
-              } else {
-                throw FormatException(
-                    root == null
-                        ? "Missing package root"
-                        : "Package root is not a string",
-                    root);
-              }
-            } else {
-              throw FormatException(
-                  name == null
-                      ? "Missing package name"
-                      : "Package name is not a string",
-                  name);
-            }
-          } else {
-            throw FormatException(
-                "Package entry is not a JSON object", packageEntry);
-          }
-        }
-        if (extraData != null) {
-          for (var key in map.keys) {
-            if (key != _configVersionKey && key != _packagesKey) {
-              extraData[key] = map[key];
-            }
-          }
-        }
-        try {
-          return SimplePackageConfig(version, accumulator);
-        } on ArgumentError catch (e) {
-          throw FormatException(e.message, e.invalidValue);
-        }
-      }
-      throw FormatException(
-          packageList == null
-              ? "Missing packages list"
-              : 'Invalid packages: Not a list',
-          packageList);
-    }
-    throw FormatException(
-        version == null
-            ? "Missing configVersion"
-            : "Invalid configVersion number",
-        version);
+  String typeName<T>() {
+    if (0 is T) return "int";
+    if ("" is T) return "string";
+    if (const [] is T) return "array";
+    return "object";
   }
-  throw FormatException("Not a JSON object", map);
+
+  T checkType<T>(dynamic value, String name, [String /*?*/ packageName]) {
+    if (value is T) return value;
+    // The only types we are called with are [int], [String], [List<dynamic>]
+    // and Map<String, dynamic>. Recognize which to give a better error message.
+    var message =
+        "$name${packageName != null ? " of package $packageName" : ""}"
+        " is not a JSON ${typeName<T>()}";
+    throw FormatException(message, value);
+  }
+
+  Package parsePackage(Map<String, dynamic> entry) {
+    String /*?*/ name;
+    String /*?*/ rootUri;
+    String /*?*/ packageUri;
+    String /*?*/ languageVersion;
+    Map<String, dynamic> /*?*/ extraData;
+    entry.forEach((key, value) {
+      switch (key) {
+        case _nameKey:
+          name = checkType<String>(value, _nameKey);
+          break;
+        case _rootUriKey:
+          rootUri = checkType<String>(value, _rootUriKey, name);
+          break;
+        case _packageUriKey:
+          packageUri = checkType<String>(value, _packageUriKey, name);
+          break;
+        case _languageVersionKey:
+          languageVersion = checkType<String>(value, _languageVersionKey, name);
+          break;
+        default:
+          (extraData ??= {})[key] = value;
+          break;
+      }
+    });
+    if (name == null) throw FormatException("Missing name entry", entry);
+    if (rootUri == null) throw FormatException("Missing rootUri entry", entry);
+    Uri root = baseLocation.resolve(rootUri);
+    Uri /*?*/ packageRoot = root;
+    if (packageUri != null) packageRoot = root.resolve(packageUri);
+    try {
+      return SimplePackage(name, root, packageRoot, languageVersion, extraData);
+    } on ArgumentError catch (e) {
+      throw FormatException(e.message, e.invalidValue);
+    }
+  }
+
+  var map = checkType<Map<String, dynamic>>(json, "value");
+  Map<String, dynamic> /*?*/ extraData = null;
+  List<Package> /*?*/ packageList;
+  int /*?*/ configVersion;
+  map.forEach((key, value) {
+    switch (key) {
+      case _configVersionKey:
+        configVersion = checkType<int>(value, _configVersionKey);
+        break;
+      case _packagesKey:
+        var packageArray = checkType<List<dynamic>>(value, _packagesKey);
+        var packages = <Package>[];
+        for (var package in packageArray) {
+          packages.add(parsePackage(
+              checkType<Map<String, dynamic>>(package, "package entry")));
+        }
+        packageList = packages;
+        break;
+      default:
+        (extraData ??= {})[key] = value;
+        break;
+    }
+  });
+  if (configVersion == null) {
+    throw FormatException("Missing configVersion entry", json);
+  }
+  if (packageList == null) throw FormatException("Missing packages list", json);
+  try {
+    return SimplePackageConfig(configVersion, packageList, extraData);
+  } on ArgumentError catch (e) {
+    throw FormatException(e.message, e.invalidValue);
+  }
 }
 
 PackageConfig _parseDotPackagesConfig(Uint8List bytes, File file) {
-  return packagesfile.parse(bytes, Uri.file(file.path));
+  return packages_file.parse(bytes, Uri.file(file.path));
 }
 
-void writePackageConfigJson(PackageConfig config, Directory targetDirectory,
-    Map<String, dynamic> /*?*/ extraData) {
+Future<void> writePackageConfigJson(
+    PackageConfig config, Directory targetDirectory) async {
   // Write .dart_tool/package_config.json first.
   var file = File(
       path.join(targetDirectory.path, ".dart_tool", "package_config.json"));
   var baseUri = Uri.file(file.path);
+  var extraData = config.extraData;
   var data = <String, dynamic>{
     _configVersionKey: PackageConfig.maxVersion,
     _packagesKey: [
@@ -213,17 +215,12 @@ void writePackageConfigJson(PackageConfig config, Directory targetDirectory,
           if (package.root != package.packageUriRoot)
             _packageUriKey: relativizeUri(package.packageUriRoot, package.root),
           if (package.languageVersion != null)
-            _languageVersionKey: package.languageVersion
+            _languageVersionKey: package.languageVersion,
+          ...?_extractExtraData(package.extraData, _packageNames),
         }
-    ]
+    ],
+    ...?_extractExtraData(config.extraData, _topNames),
   };
-
-  extraData?.forEach((key, value) {
-    if (key == _configVersionKey || key == _packagesKey) return; // Ignore.
-    data[key] = value;
-  });
-
-  file.writeAsStringSync(JsonEncoder.withIndent("  ").convert(data));
 
   // Write .packages too.
   String /*?*/ generator = extraData[_generatorKey];
@@ -238,6 +235,50 @@ void writePackageConfigJson(PackageConfig config, Directory targetDirectory,
   file = File(path.join(targetDirectory.path, ".packages"));
   baseUri = Uri.file(file.path);
   var buffer = StringBuffer();
-  packagesfile.write(buffer, config, baseUri: baseUri, comment: comment);
-  file.writeAsStringSync(buffer.toString());
+  packages_file.write(buffer, config, baseUri: baseUri, comment: comment);
+
+  await Future.wait([
+    file.writeAsString(JsonEncoder.withIndent("  ").convert(data)),
+    file.writeAsString(buffer.toString()),
+  ]);
+}
+
+/// If "extraData" is a JSON map, then return it, otherwise return null.
+///
+/// If the value contains any of the [reservedNames] for the current context,
+/// entries with that name in the extra data are dropped.
+Map<String, dynamic> /*?*/ _extractExtraData(
+    dynamic data, Iterable<String> reservedNames) {
+  if (data is Map<String, dynamic>) {
+    if (data.isEmpty) return null;
+    for (var name in reservedNames) {
+      if (data.containsKey(name)) {
+        data = {
+          for (var key in data.keys)
+            if (!reservedNames.contains(key)) key: data[key]
+        };
+        if (data.isEmpty) return null;
+        for (var value in data.values) {
+          if (!_validateJson(value)) return null;
+        }
+      }
+    }
+    return data;
+  }
+  return null;
+}
+
+/// Checks that the object is a valid JSON-like data structure.
+bool _validateJson(dynamic object) {
+  if (object == null || object == true || object == false) return true;
+  if (object is num || object is String) return true;
+  if (object is List<dynamic>) {
+    for (var element in object) if (!_validateJson(element)) return false;
+    return true;
+  }
+  if (object is Map<String, dynamic>) {
+    for (var value in object.values) if (!_validateJson(value)) return false;
+    return true;
+  }
+  return false;
 }

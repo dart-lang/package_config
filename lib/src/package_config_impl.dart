@@ -11,12 +11,14 @@ class SimplePackageConfig implements PackageConfig {
 
   final int version;
   final Map<String, Package> _packages;
+  final dynamic extraData;
 
-  SimplePackageConfig(int version, Iterable<Package> packages)
+  SimplePackageConfig(int version, Iterable<Package> packages, [this.extraData])
       : version = _validateVersion(version),
         _packages = _validatePackages(packages);
 
-  SimplePackageConfig._(int version, Iterable<SimplePackage> packages)
+  SimplePackageConfig._(
+      int version, Iterable<SimplePackage> packages, this.extraData)
       : version = _validateVersion(version),
         _packages = {for (var package in packages) package.name: package};
 
@@ -26,7 +28,8 @@ class SimplePackageConfig implements PackageConfig {
   /// found, but code expects a non-null configuration.
   const SimplePackageConfig.empty()
       : version = 1,
-        _packages = const <String, Package>{};
+        _packages = const <String, Package>{},
+        extraData = null;
 
   static int _validateVersion(int version) {
     RangeError.checkValueInInterval(version, 1, _maxVersion, "version");
@@ -115,7 +118,7 @@ class SimplePackageConfig implements PackageConfig {
           "Must not have query or fragment part");
     }
     for (var package in _packages.values) {
-      var root = package.root;
+      var root = package.packageUriRoot;
       if (isUriPrefix(root, nonPackageUri)) {
         var rest = nonPackageUri.toString().substring(root.toString().length);
         return Uri(scheme: "package", path: "${package.name}/$rest");
@@ -128,7 +131,7 @@ class SimplePackageConfig implements PackageConfig {
 /// Configuration data for a single package.
 abstract class SimplePackage implements Package {
   factory SimplePackage(String name, Uri root, Uri packageUriRoot,
-      String /*?*/ languageVersion) = _SimplePackage;
+      String /*?*/ languageVersion, dynamic extraData) = _SimplePackage;
 }
 
 class _SimplePackage implements SimplePackage {
@@ -136,14 +139,16 @@ class _SimplePackage implements SimplePackage {
   final Uri root;
   final Uri packageUriRoot;
   final String /*?*/ languageVersion;
+  final dynamic extraData;
 
-  _SimplePackage._(
-      this.name, this.root, this.packageUriRoot, this.languageVersion);
+  _SimplePackage._(this.name, this.root, this.packageUriRoot,
+      this.languageVersion, this.extraData);
 
-  factory _SimplePackage(
-      String name, Uri root, Uri packageUriRoot, String /*?*/ languageVersion) {
+  factory _SimplePackage(String name, Uri root, Uri packageUriRoot,
+      String /*?*/ languageVersion, dynamic extraData) {
     _validatePackageData(name, root, packageUriRoot, languageVersion);
-    return _SimplePackage._(name, root, packageUriRoot, languageVersion);
+    return _SimplePackage._(
+        name, root, packageUriRoot, languageVersion, extraData);
   }
 }
 
