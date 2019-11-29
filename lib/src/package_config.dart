@@ -62,9 +62,10 @@ abstract class PackageConfig {
 
   /// Provides the associated package for a specific [file] (or directory).
   ///
-  /// Returns a [Package] which contains the [file]'s path.
+  /// Returns a [Package] which contains the [file]'s path, if any.
   /// That is, the [Package.rootUri] directory is a parent directory
   /// of the [file]'s location.
+  ///
   /// Returns `null` if the file does not belong to any package.
   Package /*?*/ packageOf(Uri file);
 
@@ -72,10 +73,10 @@ abstract class PackageConfig {
   ///
   /// The [packageUri] must be a valid package URI.
   ///
-  /// Returns the remaining path of the package URI is resolved relative to the
-  /// [Package.packageUriRoot] of the corresponding package.
   /// Returns `null` if the package name of [packageUri] is not available
   /// in this package configuration.
+  /// Returns the remaining path of the package URI resolved relative to the
+  /// [Package.packageUriRoot] of the corresponding package.
   Uri /*?*/ resolve(Uri packageUri);
 
   /// The package URI which resolves to [nonPackageUri].

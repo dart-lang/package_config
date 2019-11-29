@@ -7,8 +7,6 @@ export "package_config.dart";
 import "util.dart";
 
 class SimplePackageConfig implements PackageConfig {
-  static const int _maxVersion = 2;
-
   final int version;
   final Map<String, Package> _packages;
   final dynamic extraData;
@@ -32,7 +30,7 @@ class SimplePackageConfig implements PackageConfig {
         extraData = null;
 
   static int _validateVersion(int version) {
-    RangeError.checkValueInInterval(version, 1, _maxVersion, "version");
+    RangeError.checkValueInInterval(version, 1, PackageConfig.maxVersion, "version");
     return version;
   }
 
