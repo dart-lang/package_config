@@ -12,7 +12,6 @@ import "src/package_config.dart";
 import "src/package_config_json.dart";
 
 export "src/package_config.dart" show PackageConfig, Package;
-export "src/discovery_analysis.dart" show PackageContext;
 
 /// Reads a specific package configuration file.
 ///

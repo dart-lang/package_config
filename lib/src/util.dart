@@ -40,7 +40,7 @@ int checkPackageName(String string) {
   return -1;
 }
 
-/// Validate that a Uri is a valid package:URI.
+/// Validate that a [Uri] is a valid `package:` URI.
 String checkValidPackageUri(Uri packageUri) {
   if (packageUri.scheme != "package") {
     throw new ArgumentError.value(
