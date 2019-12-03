@@ -8,6 +8,7 @@ import "dart:typed_data";
 
 import "package:path/path.dart" as path;
 
+import "errors.dart";
 import "package_config_impl.dart";
 import "packages_file.dart" as packages_file;
 import "util.dart";
@@ -100,12 +101,14 @@ PackageConfig parsePackageConfigBytes(Uint8List bytes, File file) {
 /// URI referencestring.
 PackageConfig parsePackageConfigJson(dynamic json, Uri baseLocation) {
   if (!baseLocation.hasScheme || baseLocation.isScheme("package")) {
-    throw ArgumentError.value(baseLocation.toString(), "baseLocation",
+    throw PackageConfigArgumentError(baseLocation.toString(), "baseLocation",
         "Must be an absolute non-package: URI");
   }
+
   if (!baseLocation.path.endsWith("/")) {
     baseLocation = baseLocation.resolveUri(Uri(path: "."));
   }
+
   String typeName<T>() {
     if (0 is T) return "int";
     if ("" is T) return "string";
@@ -120,7 +123,7 @@ PackageConfig parsePackageConfigJson(dynamic json, Uri baseLocation) {
     var message =
         "$name${packageName != null ? " of package $packageName" : ""}"
         " is not a JSON ${typeName<T>()}";
-    throw FormatException(message, value);
+    throw PackageConfigFormatException(message, value);
   }
 
   Package parsePackage(Map<String, dynamic> entry) {
@@ -148,15 +151,19 @@ PackageConfig parsePackageConfigJson(dynamic json, Uri baseLocation) {
           break;
       }
     });
-    if (name == null) throw FormatException("Missing name entry", entry);
-    if (rootUri == null) throw FormatException("Missing rootUri entry", entry);
+    if (name == null) {
+      throw PackageConfigFormatException("Missing name entry", entry);
+    }
+    if (rootUri == null) {
+      throw PackageConfigFormatException("Missing rootUri entry", entry);
+    }
     Uri root = baseLocation.resolve(rootUri);
     Uri /*?*/ packageRoot = root;
     if (packageUri != null) packageRoot = root.resolve(packageUri);
     try {
       return SimplePackage(name, root, packageRoot, languageVersion, extraData);
     } on ArgumentError catch (e) {
-      throw FormatException(e.message, e.invalidValue);
+      throw PackageConfigFormatException(e.message, e.invalidValue);
     }
   }
 
@@ -184,13 +191,14 @@ PackageConfig parsePackageConfigJson(dynamic json, Uri baseLocation) {
     }
   });
   if (configVersion == null) {
-    throw FormatException("Missing configVersion entry", json);
+    throw PackageConfigFormatException("Missing configVersion entry", json);
   }
-  if (packageList == null) throw FormatException("Missing packages list", json);
+  if (packageList == null)
+    throw PackageConfigFormatException("Missing packages list", json);
   try {
     return SimplePackageConfig(configVersion, packageList, extraData);
   } on ArgumentError catch (e) {
-    throw FormatException(e.message, e.invalidValue);
+    throw PackageConfigFormatException(e.message, e.invalidValue);
   }
 }
 

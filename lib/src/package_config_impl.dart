@@ -2,6 +2,8 @@
 // for details. All rights reserved. Use of this source code is governed by a
 // BSD-style license that can be found in the LICENSE file.
 
+import 'package:package_config_2/src/errors.dart';
+
 import "package_config.dart";
 export "package_config.dart";
 import "util.dart";
@@ -30,26 +32,30 @@ class SimplePackageConfig implements PackageConfig {
         extraData = null;
 
   static int _validateVersion(int version) {
-    RangeError.checkValueInInterval(version, 1, PackageConfig.maxVersion, "version");
+    if (version < 0 || version > PackageConfig.maxVersion) {
+      throw PackageConfigArgumentError(version, "version",
+          "Must be in the range 1 to ${PackageConfig.maxVersion}");
+    }
     return version;
   }
 
   static Map<String, Package> _validatePackages(Iterable<Package> packages) {
     Map<String, Package> result = {};
     for (var package in packages) {
-      if (package is! _SimplePackage) {
-        // _SimplePackage validates these properties.
+      if (package is! SimplePackage) {
+        // SimplePackage validates these properties.
         try {
           _validatePackageData(package.name, package.root,
               package.packageUriRoot, package.languageVersion);
         } catch (e) {
-          throw ArgumentError.value(
+          throw PackageConfigArgumentError(
               packages, "packages", "Package ${package.name}: ${e.message}");
         }
       }
       var name = package.name;
       if (result.containsKey(name)) {
-        throw ArgumentError.value(name, "packages", "Duplicate package name");
+        throw PackageConfigArgumentError(
+            name, "packages", "Duplicate package name");
       }
       result[name] = package;
     }
@@ -67,7 +73,7 @@ class SimplePackageConfig implements PackageConfig {
         // If one string is a prefix of another,
         // the former sorts just before the latter.
         if (nextRoot.startsWith(prevRoot)) {
-          throw ArgumentError.value(
+          throw PackageConfigArgumentError(
               packages,
               "packages",
               "Package ${next.name} root overlaps "
@@ -101,18 +107,18 @@ class SimplePackageConfig implements PackageConfig {
   }
 
   Uri /*?*/ resolve(Uri packageUri) {
-    String packageName = checkValidPackageUri(packageUri);
+    String packageName = checkValidPackageUri(packageUri, "packageUri");
     return _packages[packageName]?.packageUriRoot?.resolveUri(
         Uri(path: packageUri.path.substring(packageName.length + 1)));
   }
 
   Uri /*?*/ toPackageUri(Uri nonPackageUri) {
     if (nonPackageUri.isScheme("package")) {
-      throw ArgumentError.value(
+      throw PackageConfigArgumentError(
           nonPackageUri, "nonPackageUri", "Must not be a package URI");
     }
     if (nonPackageUri.hasQuery || nonPackageUri.hasFragment) {
-      throw ArgumentError.value(nonPackageUri, "nonPackageUri",
+      throw PackageConfigArgumentError(nonPackageUri, "nonPackageUri",
           "Must not have query or fragment part");
     }
     for (var package in _packages.values) {
@@ -127,25 +133,20 @@ class SimplePackageConfig implements PackageConfig {
 }
 
 /// Configuration data for a single package.
-abstract class SimplePackage implements Package {
-  factory SimplePackage(String name, Uri root, Uri packageUriRoot,
-      String /*?*/ languageVersion, dynamic extraData) = _SimplePackage;
-}
-
-class _SimplePackage implements SimplePackage {
+class SimplePackage implements Package {
   final String name;
   final Uri root;
   final Uri packageUriRoot;
   final String /*?*/ languageVersion;
   final dynamic extraData;
 
-  _SimplePackage._(this.name, this.root, this.packageUriRoot,
+  SimplePackage._(this.name, this.root, this.packageUriRoot,
       this.languageVersion, this.extraData);
 
-  factory _SimplePackage(String name, Uri root, Uri packageUriRoot,
+  factory SimplePackage(String name, Uri root, Uri packageUriRoot,
       String /*?*/ languageVersion, dynamic extraData) {
     _validatePackageData(name, root, packageUriRoot, languageVersion);
-    return _SimplePackage._(
+    return SimplePackage._(
         name, root, packageUriRoot, languageVersion, extraData);
   }
 }
@@ -153,29 +154,29 @@ class _SimplePackage implements SimplePackage {
 void _validatePackageData(
     String name, Uri root, Uri packageUriRoot, String /*?*/ languageVersion) {
   if (!isValidPackageName(name)) {
-    throw ArgumentError.value(name, "name", "Not a valid package name");
+    throw PackageConfigArgumentError(name, "name", "Not a valid package name");
   }
   if (!isAbsoluteDirectoryUri(root)) {
-    throw ArgumentError.value(
+    throw PackageConfigArgumentError(
         "$root",
         "root",
         "Not an absolute URI with no query or fragment "
             "with a path ending in /");
   }
   if (!isAbsoluteDirectoryUri(packageUriRoot)) {
-    throw ArgumentError.value(
+    throw PackageConfigArgumentError(
         packageUriRoot,
         "packageUriRoot",
         "Not an absolute URI with no query or fragment "
             "with a path ending in /");
   }
   if (!isUriPrefix(root, packageUriRoot)) {
-    throw ArgumentError.value(packageUriRoot, "packageUriRoot",
+    throw PackageConfigArgumentError(packageUriRoot, "packageUriRoot",
         "The package URI root is not below the package root");
   }
   if (languageVersion != null &&
       checkValidVersionNumber(languageVersion) >= 0) {
-    throw ArgumentError.value(
+    throw PackageConfigArgumentError(
         languageVersion, "languageVersion", "Invalid language version format");
   }
 }

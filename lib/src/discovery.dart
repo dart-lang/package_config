@@ -8,6 +8,7 @@ import "package:path/path.dart" as path;
 
 import "package_config_impl.dart";
 import "package_config_json.dart";
+import "errors.dart";
 
 /// Discover the package configuration for a Dart script.
 ///
@@ -16,21 +17,22 @@ import "package_config_json.dart";
 /// and stopping when something is found.
 ///
 /// * Check if a `.dart_tool/package_config.json` file exists in the directory.
-/// * Check if a `.packages` file exists in a directory.
+/// * Check if a `.packages` file exists in the directory.
 /// * Repeat these checks for the parent directories until reaching the
-///   root directory.
+///   root directory if [recursive] is true.
 ///
 /// If any of these tests succeed, a `PackageConfig` class is returned.
 /// Returns `null` if no configuration was found. If a configuration
 /// is needed, then the caller can supply [PackageConfig.empty].
-Future<PackageConfig /*?*/ > findPackageConfig(Directory baseDirectory) async {
+Future<PackageConfig /*?*/ > findPackageConfig(Directory baseDirectory,
+    bool recursive) async {
   var directory = baseDirectory;
   if (!directory.isAbsolute) directory = directory.absolute;
   if (!await directory.exists()) {
-    throw new ArgumentError.value(
+    throw PackageConfigArgumentError(
         baseDirectory, "baseDirectory", "Directory does not exist.");
   }
-  while (true) {
+  do {
     // Check for $cwd/.packages
     var packageConfig = await findPackagConfigInDirectory(directory);
     if (packageConfig != null) return packageConfig;
@@ -38,7 +40,7 @@ Future<PackageConfig /*?*/ > findPackageConfig(Directory baseDirectory) async {
     var parentDirectory = directory.parent;
     if (parentDirectory.path == directory.path) break;
     directory = parentDirectory;
-  }
+  } while (recursive);
   return null;
 }
 

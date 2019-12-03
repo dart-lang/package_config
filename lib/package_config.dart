@@ -12,6 +12,7 @@ import "src/package_config.dart";
 import "src/package_config_json.dart";
 
 export "src/package_config.dart" show PackageConfig, Package;
+export "src/errors.dart" show PackageConfigError;
 
 /// Reads a specific package configuration file.
 ///
@@ -37,17 +38,17 @@ Future<PackageConfig> loadPackageConfig(File file) => readAnyConfigFile(file);
 /// if not, a `.packages`, then that file is loaded.
 ///
 /// If no file is found in the current directory,
-/// then the parent directories are checked instead recursively,
-/// all the way to the root directory.
+/// then the parent directories are checked recursively,
+/// all the way to the root directory, to check if those contains
+/// a package configuration.
+/// If [recurse] is set to [false], this parent directory check is not
+/// performed.
 ///
 /// If no configuration file is found, the [PackageConfig.empty] constant object
 /// is returned.
-///
-/// If [extraData] is provided, and the loaded file is a `package_config.json`
-/// file, then any unknown JSON object entries in the main JSON object of the
-/// file are added to [extraData] with the same name.
-Future<PackageConfig> findPackageConfig(Directory directory) =>
-    discover.findPackageConfig(directory);
+Future<PackageConfig> findPackageConfig(Directory directory,
+        {bool recurse = true}) =>
+    discover.findPackageConfig(directory, recurse) ?? PackageConfig.empty;
 
 /// Writes a package configuration to the provided directory.
 ///

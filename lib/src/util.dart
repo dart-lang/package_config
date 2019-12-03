@@ -5,6 +5,8 @@
 /// Utility methods used by more than one library in the package.
 library package_config.util;
 
+import "errors.dart";
+
 import "package:charcode/ascii.dart";
 
 // All ASCII characters that are valid in a package name, with space
@@ -41,46 +43,46 @@ int checkPackageName(String string) {
 }
 
 /// Validate that a [Uri] is a valid `package:` URI.
-String checkValidPackageUri(Uri packageUri) {
+String checkValidPackageUri(Uri packageUri, String name) {
   if (packageUri.scheme != "package") {
-    throw new ArgumentError.value(
-        packageUri, "packageUri", "Not a package: URI");
+    throw PackageConfigArgumentError(
+        packageUri, name, "Not a package: URI");
   }
   if (packageUri.hasAuthority) {
-    throw new ArgumentError.value(
-        packageUri, "packageUri", "Package URIs must not have a host part");
+    throw PackageConfigArgumentError(
+        packageUri, name, "Package URIs must not have a host part");
   }
   if (packageUri.hasQuery) {
     // A query makes no sense if resolved to a file: URI.
-    throw new ArgumentError.value(
-        packageUri, "packageUri", "Package URIs must not have a query part");
+    throw PackageConfigArgumentError(
+        packageUri, name, "Package URIs must not have a query part");
   }
   if (packageUri.hasFragment) {
     // We could leave the fragment after the URL when resolving,
     // but it would be odd if "package:foo/foo.dart#1" and
     // "package:foo/foo.dart#2" were considered different libraries.
     // Keep the syntax open in case we ever get multiple libraries in one file.
-    throw new ArgumentError.value(
-        packageUri, "packageUri", "Package URIs must not have a fragment part");
+    throw PackageConfigArgumentError(
+        packageUri, name, "Package URIs must not have a fragment part");
   }
   if (packageUri.path.startsWith('/')) {
-    throw new ArgumentError.value(
-        packageUri, "packageUri", "Package URIs must not start with a '/'");
+    throw PackageConfigArgumentError(
+        packageUri, name, "Package URIs must not start with a '/'");
   }
   int firstSlash = packageUri.path.indexOf('/');
   if (firstSlash == -1) {
-    throw new ArgumentError.value(packageUri, "packageUri",
+    throw PackageConfigArgumentError(packageUri, name,
         "Package URIs must start with the package name followed by a '/'");
   }
   String packageName = packageUri.path.substring(0, firstSlash);
   int badIndex = checkPackageName(packageName);
   if (badIndex >= 0) {
     if (packageName.isEmpty) {
-      throw new ArgumentError.value(
-          packageUri, "packageUri", "Package names mus be non-empty");
+      throw PackageConfigArgumentError(
+          packageUri, name, "Package names mus be non-empty");
     }
     if (badIndex == packageName.length) {
-      throw new ArgumentError.value(packageUri, "packageUri",
+      throw PackageConfigArgumentError(packageUri, name,
           "Package names must contain at least one non-'.' character");
     }
     assert(badIndex < packageName.length);
@@ -90,8 +92,8 @@ String checkValidPackageUri(Uri packageUri) {
       // Printable character.
       badChar = "'${packageName[badIndex]}' ($badChar)";
     }
-    throw new ArgumentError.value(
-        packageUri, "packageUri", "Package names must not contain $badChar");
+    throw PackageConfigArgumentError(
+        packageUri, name, "Package names must not contain $badChar");
   }
   return packageName;
 }
@@ -188,7 +190,7 @@ bool isUriPrefix(Uri prefix, Uri path) {
 Uri relativizeUri(Uri uri, Uri baseUri) {
   assert(baseUri.isAbsolute);
   if (uri.hasQuery || uri.hasFragment) {
-    uri = new Uri(
+    uri = Uri(
         scheme: uri.scheme,
         userInfo: uri.hasAuthority ? uri.userInfo : null,
         host: uri.hasAuthority ? uri.host : null,
@@ -214,12 +216,10 @@ Uri relativizeUri(Uri uri, Uri baseUri) {
   }
 
   baseUri = baseUri.normalizePath();
-  List<String> base = baseUri.pathSegments.toList();
-  if (base.isNotEmpty) {
-    base = new List<String>.from(base)..removeLast();
-  }
+  List<String> base = [... baseUri.pathSegments];
+  if (base.isNotEmpty) base.removeLast();
   uri = uri.normalizePath();
-  List<String> target = uri.pathSegments.toList();
+  List<String> target = [... uri.pathSegments];
   if (target.isNotEmpty && target.last.isEmpty) target.removeLast();
   int index = 0;
   while (index < base.length && index < target.length) {
@@ -230,12 +230,16 @@ Uri relativizeUri(Uri uri, Uri baseUri) {
   }
   if (index == base.length) {
     if (index == target.length) {
-      return new Uri(path: "./");
+      return Uri(path: "./");
     }
-    return new Uri(path: target.skip(index).join('/'));
+    return Uri(path: target.skip(index).join('/'));
   } else if (index > 0) {
-    return new Uri(
-        path: '../' * (base.length - index) + target.skip(index).join('/'));
+    var buffer = StringBuffer();
+    for (int n = base.length - index; n > 0; --n) {
+      buffer.write("../");
+    }
+    buffer.writeAll(target.skip(index), "/");
+    return Uri(path: buffer.toString());
   } else {
     return uri;
   }

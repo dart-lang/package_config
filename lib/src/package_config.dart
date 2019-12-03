@@ -71,7 +71,14 @@ abstract class PackageConfig {
 
   /// Resolves a `package:` URI to a non-package URI
   ///
-  /// The [packageUri] must be a valid package URI.
+  /// The [packageUri] must be a valid package URI. That means:
+  /// * A URI with `package` as scheme,
+  /// * with no authority part (`package://...`),
+  /// * with a path starting with a valid package name followed by a slash, and
+  /// * with no query or fragment part.
+  ///
+  /// Throws an [ArgumentError] (which also implements [PackageConfigError])
+  /// if the package URI is not valid.
   ///
   /// Returns `null` if the package name of [packageUri] is not available
   /// in this package configuration.
@@ -83,8 +90,10 @@ abstract class PackageConfig {
   ///
   /// The [nonPackageUri] must not have any query or fragment part,
   /// and it must not have `package` as scheme.
+  /// Throws an [ArgumentError] (which also implements [PackageConfigError])
+  /// if the non-package URI is not valid.
   ///
-  /// Returns the a package URI which [resolve] will convert to [nonPackageUri],
+  /// Returns a package URI which [resolve] will convert to [nonPackageUri],
   /// if any such URI exists. Returns `null` if no such package URI exists.
   Uri /*?*/ toPackageUri(Uri nonPackageUri);
 
@@ -102,7 +111,7 @@ abstract class Package {
   ///
   /// The [name] must be a valid package name.
   /// The [root] must be an absolute directory URI, meaning an absolute URI
-  /// with no query or fragment parth and a path starting and ending with `/`.
+  /// with no query or fragment path and a path starting and ending with `/`.
   /// The [packageUriRoot], if provided, must be either an absolute
   /// directory URI or a relative URI reference which is then resolved
   /// relative to [root]. It must then also be a subdirectory of [root],
