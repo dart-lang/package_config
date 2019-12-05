@@ -44,11 +44,10 @@ Future<PackageConfig> loadPackageConfig(File file) => readAnyConfigFile(file);
 /// If [recurse] is set to [false], this parent directory check is not
 /// performed.
 ///
-/// If no configuration file is found, the [PackageConfig.empty] constant object
-/// is returned.
+/// Returns `null` if no configuration file is found.
 Future<PackageConfig> findPackageConfig(Directory directory,
         {bool recurse = true}) =>
-    discover.findPackageConfig(directory, recurse) ?? PackageConfig.empty;
+    discover.findPackageConfig(directory, recurse);
 
 /// Writes a package configuration to the provided directory.
 ///
