@@ -122,7 +122,7 @@ Future<File /*?*/ > checkForDotPackagesFile(Directory directory) async {
   return null;
 }
 
-Future<Uint8List/*?*/> _loadFile(File file) async {
+Future<Uint8List /*?*/ > _loadFile(File file) async {
   Uint8List bytes;
   try {
     return await file.readAsBytes();

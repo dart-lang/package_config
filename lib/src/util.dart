@@ -48,8 +48,7 @@ int checkPackageName(String string) {
 /// Validate that a [Uri] is a valid `package:` URI.
 String checkValidPackageUri(Uri packageUri, String name) {
   if (packageUri.scheme != "package") {
-    throw PackageConfigArgumentError(
-        packageUri, name, "Not a package: URI");
+    throw PackageConfigArgumentError(packageUri, name, "Not a package: URI");
   }
   if (packageUri.hasAuthority) {
     throw PackageConfigArgumentError(
@@ -232,10 +231,10 @@ Uri relativizeUri(Uri uri, Uri baseUri) {
   }
 
   baseUri = baseUri.normalizePath();
-  List<String> base = [... baseUri.pathSegments];
+  List<String> base = [...baseUri.pathSegments];
   if (base.isNotEmpty) base.removeLast();
   uri = uri.normalizePath();
-  List<String> target = [... uri.pathSegments];
+  List<String> target = [...uri.pathSegments];
   if (target.isNotEmpty && target.last.isEmpty) target.removeLast();
   int index = 0;
   while (index < base.length && index < target.length) {
@@ -276,7 +275,7 @@ Future<Uint8List> defaultLoader(Uri uri) async {
   throw UnsupportedError("Default URI unsupported scheme: $uri");
 }
 
-Future<Uint8List/*?*/> _httpGet(Uri uri) async {
+Future<Uint8List /*?*/ > _httpGet(Uri uri) async {
   assert(uri.isScheme("http") || uri.isScheme("https"));
   HttpClient client = new HttpClient();
   HttpClientRequest request = await client.getUrl(uri);

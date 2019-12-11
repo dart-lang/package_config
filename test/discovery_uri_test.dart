@@ -61,7 +61,8 @@ main() {
         "package_config.json": packageConfigFile,
       }
     }, (Uri directory, loader) async {
-      PackageConfig config = await findPackageConfigUri(directory, loader: loader);
+      PackageConfig config =
+          await findPackageConfigUri(directory, loader: loader);
       expect(config.version, 2); // Found package_config.json file.
       validatePackagesFile(config, directory);
     });
@@ -72,7 +73,8 @@ main() {
       "script.dart": "main(){}",
       "packages": {"shouldNotBeFound": {}}
     }, (Uri directory, loader) async {
-      PackageConfig config = await findPackageConfigUri(directory, loader: loader);
+      PackageConfig config =
+          await findPackageConfigUri(directory, loader: loader);
       expect(config.version, 1); // Found .packages file.
       validatePackagesFile(config, directory);
     });
@@ -87,8 +89,9 @@ main() {
         "script.dart": "main(){}",
       }
     }, (Uri directory, loader) async {
-      PackageConfig config =
-          await findPackageConfigUri(directory.resolve("subdir/"), loader: loader);
+      PackageConfig config = await findPackageConfigUri(
+          directory.resolve("subdir/"),
+          loader: loader);
       expect(config.version, 2);
       validatePackagesFile(config, directory);
     });
@@ -99,7 +102,8 @@ main() {
       "subdir": {"script.dart": "main(){}"}
     }, (Uri directory, loader) async {
       PackageConfig config;
-      config = await findPackageConfigUri(directory.resolve("subdir/"), loader: loader);
+      config = await findPackageConfigUri(directory.resolve("subdir/"),
+          loader: loader);
       expect(config.version, 1);
       validatePackagesFile(config, directory);
     });
@@ -110,7 +114,8 @@ main() {
         "foo": {},
       }
     }, (Uri directory, loader) async {
-      PackageConfig config = await findPackageConfigUri(directory, loader: loader);
+      PackageConfig config =
+          await findPackageConfigUri(directory, loader: loader);
       expect(config, null);
     });
 
@@ -214,14 +219,16 @@ main() {
 
     loaderTest("no config found", {}, (Uri directory, loader) {
       Uri file = directory.resolve("anyname");
-      expect(() => loadPackageConfigUri(file, loader: loader), throwsArgumentError);
+      expect(() => loadPackageConfigUri(file, loader: loader),
+          throwsArgumentError);
     });
 
     loaderTest("specified file syntax error", {
       "anyname": "syntax error",
     }, (Uri directory, loader) {
       Uri file = directory.resolve("anyname");
-      expect(() => loadPackageConfigUri(file, loader: loader), throwsFormatException);
+      expect(() => loadPackageConfigUri(file, loader: loader),
+          throwsFormatException);
     });
 
     // Find package_config.json in subdir even if initial file syntax error.
@@ -242,7 +249,8 @@ main() {
       ".packages": "{syntax error",
     }, (Uri directory, loader) {
       Uri file = directory.resolve(".packages");
-      expect(() => loadPackageConfigUri(file, loader: loader), throwsFormatException);
+      expect(() => loadPackageConfigUri(file, loader: loader),
+          throwsFormatException);
     });
   });
 }

@@ -84,15 +84,13 @@ ${packages.map((nu) => """
 }
 """;
 
-
-
 /// Mimics a directory structure of [description] and runs [fileTest].
 ///
 /// Description is a map, each key is a file entry. If the value is a map,
 /// it's a subdirectory, otherwise it's a file and the value is the content
 /// as a string.
 void loaderTest(String name, Map<String, Object> description,
-  void loaderTest(Uri root, Future<Uint8List> loader(Uri uri))) {
+    void loaderTest(Uri root, Future<Uint8List> loader(Uri uri))) {
   Uri root = Uri(scheme: "test", path: "/");
   Future<Uint8List> loader(Uri uri) async {
     var path = uri.path;
@@ -106,6 +104,6 @@ void loaderTest(String name, Map<String, Object> description,
     if (value is String) return utf8.encode(value);
     return null;
   }
+
   test(name, () => loaderTest(root, loader));
 }
-

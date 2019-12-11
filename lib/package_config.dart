@@ -58,7 +58,7 @@ Future<PackageConfig> loadPackageConfig(File file) => readAnyConfigFile(file);
 /// As such, it does not distinguish between a file not existing,
 /// and it being temporarily locked or unreachable.
 Future<PackageConfig> loadPackageConfigUri(Uri file,
-        {Future<Uint8List/*?*/> loader(Uri uri) /*?*/}) =>
+        {Future<Uint8List /*?*/ > loader(Uri uri) /*?*/}) =>
     readAnyConfigFileUri(file, loader);
 
 /// Finds a package configuration relative to [directory].

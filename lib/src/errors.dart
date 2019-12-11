@@ -10,12 +10,15 @@ abstract class PackageConfigError {
   PackageConfigError._();
 }
 
-class PackageConfigArgumentError extends ArgumentError implements PackageConfigError {
-  PackageConfigArgumentError(Object/*?*/ value, String name, String message)
+class PackageConfigArgumentError extends ArgumentError
+    implements PackageConfigError {
+  PackageConfigArgumentError(Object /*?*/ value, String name, String message)
       : super.value(value, name, message);
 }
 
-class PackageConfigFormatException extends FormatException implements PackageConfigError {
-  PackageConfigFormatException(String message, Object/*?*/ value, [int /*?*/ index])
+class PackageConfigFormatException extends FormatException
+    implements PackageConfigError {
+  PackageConfigFormatException(String message, Object /*?*/ value,
+      [int /*?*/ index])
       : super(message, value, index);
 }
