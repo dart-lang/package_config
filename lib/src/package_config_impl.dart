@@ -2,8 +2,7 @@
 // for details. All rights reserved. Use of this source code is governed by a
 // BSD-style license that can be found in the LICENSE file.
 
-import 'package:package_config_2/src/errors.dart';
-
+import 'errors.dart';
 import "package_config.dart";
 export "package_config.dart";
 import "util.dart";

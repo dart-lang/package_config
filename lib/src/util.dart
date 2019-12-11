@@ -5,9 +5,12 @@
 /// Utility methods used by more than one library in the package.
 library package_config.util;
 
-import "errors.dart";
+import 'dart:io';
+import 'dart:typed_data';
 
 import "package:charcode/ascii.dart";
+
+import "errors.dart";
 
 // All ASCII characters that are valid in a package name, with space
 // for all the invalid ones (including space).
@@ -171,6 +174,19 @@ bool isUriPrefix(Uri prefix, Uri path) {
   return path.toString().startsWith(prefix.toString());
 }
 
+/// Finds the first non-JSON-whitespace character in a file.
+///
+/// Used to heuristically detect whether a file is a JSON file or an .ini file.
+int firstNonWhitespaceChar(List<int> bytes) {
+  for (int i = 0; i < bytes.length; i++) {
+    var char = bytes[i];
+    if (char != 0x20 && char != 0x09 && char != 0x0a && char != 0x0d) {
+      return char;
+    }
+  }
+  return -1;
+}
+
 /// Attempts to return a relative path-only URI for [uri].
 ///
 /// First removes any query or fragment part from [uri].
@@ -243,4 +259,47 @@ Uri relativizeUri(Uri uri, Uri baseUri) {
   } else {
     return uri;
   }
+}
+
+Future<Uint8List> defaultLoader(Uri uri) async {
+  if (uri.isScheme("file")) {
+    var file = File.fromUri(uri);
+    try {
+      return file.readAsBytes();
+    } catch (_) {
+      return null;
+    }
+  }
+  if (uri.isScheme("http") || uri.isScheme("https")) {
+    return _httpGet(uri);
+  }
+  throw UnsupportedError("Default URI unsupported scheme: $uri");
+}
+
+Future<Uint8List/*?*/> _httpGet(Uri uri) async {
+  assert(uri.isScheme("http") || uri.isScheme("https"));
+  HttpClient client = new HttpClient();
+  HttpClientRequest request = await client.getUrl(uri);
+  HttpClientResponse response = await request.close();
+  if (response.statusCode != HttpStatus.ok) {
+    return null;
+  }
+  List<List<int>> splitContent = await response.toList();
+  int totalLength = 0;
+  if (splitContent.length == 1) {
+    var part = splitContent[0];
+    if (part is Uint8List) {
+      return part;
+    }
+  }
+  for (var list in splitContent) {
+    totalLength += list.length;
+  }
+  Uint8List result = new Uint8List(totalLength);
+  int offset = 0;
+  for (Uint8List contentPart in splitContent) {
+    result.setRange(offset, offset + contentPart.length, contentPart);
+    offset += contentPart.length;
+  }
+  return result;
 }

@@ -95,7 +95,7 @@ void main() {
         }
         """;
       var config = parsePackageConfigBytes(utf8.encode(packageConfigFile),
-          File.fromUri(Uri.parse("file:///tmp/.dart_tool/file.dart")));
+          Uri.parse("file:///tmp/.dart_tool/file.dart"));
       expect(config.version, 2);
       expect({for (var p in config.packages) p.name}, {"foo", "bar", "baz"});
 
@@ -161,7 +161,7 @@ void main() {
         }
         """;
       var config = parsePackageConfigBytes(utf8.encode(packageConfigFile),
-          File.fromUri(Uri.parse("file:///tmp/.dart_tool/file.dart")));
+          Uri.parse("file:///tmp/.dart_tool/file.dart"));
       expect(config.version, 2);
       expect({for (var p in config.packages) p.name}, {"foo", "bar", "baz"});
 
@@ -185,7 +185,7 @@ void main() {
     var root = '"rootUri":"/foo/"';
     test("minimal", () {
       var config = parsePackageConfigBytes(utf8.encode("{$cfg,$pkgs}"),
-          File.fromUri(Uri.parse("file:///tmp/.dart_tool/file.dart")));
+          Uri.parse("file:///tmp/.dart_tool/file.dart"));
       expect(config.version, 2);
       expect(config.packages, isEmpty);
     });
@@ -194,7 +194,7 @@ void main() {
       // are optional.
       var config = parsePackageConfigBytes(
           utf8.encode('{$cfg,"packages":[{$name,$root}]}'),
-          File.fromUri(Uri.parse("file:///tmp/.dart_tool/file.dart")));
+          Uri.parse("file:///tmp/.dart_tool/file.dart"));
       expect(config.version, 2);
       expect(config.packages.first.name, "foo");
     });
@@ -204,7 +204,7 @@ void main() {
         test(name, () {
           expect(
               () => parsePackageConfigBytes(utf8.encode(source),
-                  File.fromUri(Uri.parse("file:///tmp/.dart_tool/file.dart"))),
+                  Uri.parse("file:///tmp/.dart_tool/file.dart")),
               throwsA(TypeMatcher<FormatException>()));
         });
       }

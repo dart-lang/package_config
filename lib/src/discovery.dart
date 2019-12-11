@@ -3,12 +3,20 @@
 // BSD-style license that can be found in the LICENSE file.
 
 import "dart:io";
+import 'dart:typed_data';
 
 import "package:path/path.dart" as path;
 
+import "errors.dart";
 import "package_config_impl.dart";
 import "package_config_json.dart";
-import "errors.dart";
+import "packages_file.dart" as packages_file;
+import "util.dart" show defaultLoader;
+
+final Uri packageConfigJsonPath = Uri(path: ".dart_tool/package_config.json");
+final Uri dotPackagesPath = Uri(path: ".packages");
+final Uri currentPath = Uri(path: ".");
+final Uri parentPath = Uri(path: "..");
 
 /// Discover the package configuration for a Dart script.
 ///
@@ -24,23 +32,57 @@ import "errors.dart";
 /// If any of these tests succeed, a `PackageConfig` class is returned.
 /// Returns `null` if no configuration was found. If a configuration
 /// is needed, then the caller can supply [PackageConfig.empty].
-Future<PackageConfig /*?*/ > findPackageConfig(Directory baseDirectory,
-    bool recursive) async {
+Future<PackageConfig /*?*/ > findPackageConfig(
+    Directory baseDirectory, bool recursive) async {
   var directory = baseDirectory;
   if (!directory.isAbsolute) directory = directory.absolute;
   if (!await directory.exists()) {
-    throw PackageConfigArgumentError(
-        baseDirectory, "baseDirectory", "Directory does not exist.");
+    return null;
   }
   do {
     // Check for $cwd/.packages
     var packageConfig = await findPackagConfigInDirectory(directory);
     if (packageConfig != null) return packageConfig;
-    // Check in cwd(/..)+/
+    if (!recursive) break;
+    // Check in parent directories.
     var parentDirectory = directory.parent;
     if (parentDirectory.path == directory.path) break;
     directory = parentDirectory;
-  } while (recursive);
+  } while (true);
+  return null;
+}
+
+/// Similar to [findPackageConfig] but based on a URI.
+Future<PackageConfig /*?*/ > findPackageConfigUri(Uri location,
+    Future<Uint8List /*?*/ > loader(Uri uri) /*?*/, bool recursive) async {
+  if (location.isScheme("package")) {
+    throw PackageConfigArgumentError(
+        location, "location", "Must not be a package: URI");
+  }
+  if (loader == null) {
+    if (location.isScheme("file")) {
+      return findPackageConfig(
+          Directory.fromUri(location.resolveUri(currentPath)), recursive);
+    }
+    loader = defaultLoader;
+  }
+  if (!location.path.endsWith("/")) location = location.resolveUri(currentPath);
+  while (true) {
+    var file = location.resolveUri(packageConfigJsonPath);
+    var bytes = await loader(file);
+    if (bytes != null) {
+      return parsePackageConfigBytes(bytes, file);
+    }
+    file = location.resolveUri(dotPackagesPath);
+    bytes = await loader(file);
+    if (bytes != null) {
+      return packages_file.parse(bytes, file);
+    }
+    if (!recursive) break;
+    var parent = location.resolveUri(parentPath);
+    if (parent == location) break;
+    location = parent;
+  }
   return null;
 }
 
@@ -78,4 +120,13 @@ Future<File /*?*/ > checkForDotPackagesFile(Directory directory) async {
   var file = File(path.join(directory.path, ".packages"));
   if (await file.exists()) return file;
   return null;
+}
+
+Future<Uint8List/*?*/> _loadFile(File file) async {
+  Uint8List bytes;
+  try {
+    return await file.readAsBytes();
+  } catch (_) {
+    return null;
+  }
 }
