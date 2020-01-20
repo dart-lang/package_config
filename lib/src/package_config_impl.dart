@@ -4,8 +4,9 @@
 
 import 'errors.dart';
 import "package_config.dart";
-export "package_config.dart";
 import "util.dart";
+
+export "package_config.dart";
 
 class SimplePackageConfig implements PackageConfig {
   final int version;
@@ -15,11 +16,6 @@ class SimplePackageConfig implements PackageConfig {
   SimplePackageConfig(int version, Iterable<Package> packages, [this.extraData])
       : version = _validateVersion(version),
         _packages = _validatePackages(packages);
-
-  SimplePackageConfig._(
-      int version, Iterable<SimplePackage> packages, this.extraData)
-      : version = _validateVersion(version),
-        _packages = {for (var package in packages) package.name: package};
 
   /// Creates empty configuration.
   ///
@@ -142,6 +138,9 @@ class SimplePackage implements Package {
   SimplePackage._(this.name, this.root, this.packageUriRoot,
       this.languageVersion, this.extraData);
 
+  /// Creates a [SimplePackage] with the provided content.
+  ///
+  /// The provided arguments must be valid.
   factory SimplePackage(String name, Uri root, Uri packageUriRoot,
       String /*?*/ languageVersion, dynamic extraData) {
     _validatePackageData(name, root, packageUriRoot, languageVersion);
