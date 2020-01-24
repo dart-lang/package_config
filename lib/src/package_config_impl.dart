@@ -11,11 +11,23 @@ export "package_config.dart";
 class SimplePackageConfig implements PackageConfig {
   final int version;
   final Map<String, Package> _packages;
+  final PackageTree _packageTree;
   final dynamic extraData;
 
-  SimplePackageConfig(int version, Iterable<Package> packages, [this.extraData])
-      : version = _validateVersion(version),
-        _packages = _validatePackages(packages);
+  SimplePackageConfig(int version, Iterable<Package> packages,
+      [dynamic extraData])
+      : this._(_validateVersion(version), packages,
+            [...packages]..sort(_compareRoot), extraData);
+
+  /// Expects a
+  SimplePackageConfig._(this.version, Iterable<Package> originalPackages,
+      List<Package> packages, this.extraData)
+      : _packageTree = _validatePackages(originalPackages, packages),
+        _packages = {for (var p in packages) p.name: p};
+
+  /// Used for sorting packages by root path.
+  static int _compareRoot(Package p1, Package p2) =>
+      p1.root.toString().compareTo(p2.root.toString());
 
   /// Creates empty configuration.
   ///
@@ -23,6 +35,7 @@ class SimplePackageConfig implements PackageConfig {
   /// found, but code expects a non-null configuration.
   const SimplePackageConfig.empty()
       : version = 1,
+        _packageTree = const EmptyPackageTree(),
         _packages = const <String, Package>{},
         extraData = null;
 
@@ -34,18 +47,28 @@ class SimplePackageConfig implements PackageConfig {
     return version;
   }
 
-  static Map<String, Package> _validatePackages(Iterable<Package> packages) {
+  static PackageTree _validatePackages(
+      Iterable<Package> originalPackages, List<Package> packages) {
+    // Assumes packages are sorted.
     Map<String, Package> result = {};
-    for (var package in packages) {
-      if (package is! SimplePackage) {
+    var tree = MutablePackageTree();
+    SimplePackage package;
+    for (var originalPackage in packages) {
+      if (originalPackage is! SimplePackage) {
         // SimplePackage validates these properties.
         try {
-          _validatePackageData(package.name, package.root,
-              package.packageUriRoot, package.languageVersion);
+          package = SimplePackage(
+              originalPackage.name,
+              originalPackage.root,
+              originalPackage.packageUriRoot,
+              originalPackage.languageVersion,
+              originalPackage.extraData);
         } catch (e) {
           throw PackageConfigArgumentError(
               packages, "packages", "Package ${package.name}: ${e.message}");
         }
+      } else {
+        package = originalPackage;
       }
       var name = package.name;
       if (result.containsKey(name)) {
@@ -53,33 +76,29 @@ class SimplePackageConfig implements PackageConfig {
             name, "packages", "Duplicate package name");
       }
       result[name] = package;
-    }
-
-    // Check that no root URI is a prefix of another.
-    if (result.length > 1) {
-      // Uris cache their toString, so this is not as bad as it looks.
-      var rootUris = [...result.values]
-        ..sort((a, b) => a.root.toString().compareTo(b.root.toString()));
-      var prev = rootUris[0];
-      var prevRoot = prev.root.toString();
-      for (int i = 1; i < rootUris.length; i++) {
-        var next = rootUris[i];
-        var nextRoot = next.root.toString();
-        // If one string is a prefix of another,
-        // the former sorts just before the latter.
-        if (nextRoot.startsWith(prevRoot)) {
+      var existingPackage = tree.add(0, package);
+      if (existingPackage != null) {
+        // There is a conflict with an existing package.
+        // Either they have the same root.
+        if (existingPackage.root == package.root) {
           throw PackageConfigArgumentError(
-              packages,
+              originalPackages,
               "packages",
-              "Package ${next.name} root overlaps "
-                  "package ${prev.name} root.\n"
-                  "${prev.name} root: $prevRoot\n"
-                  "${next.name} root: $nextRoot\n");
+              "Packages ${package.name} and ${existingPackage.name}"
+                  "have the same root directory: ${package.root}.\n");
         }
-        prev = next;
+        // Or package is inside the package URI root of the existing package.
+        throw PackageConfigArgumentError(
+            originalPackages,
+            "packages",
+            "Package ${package.name} is inside the package URI root of "
+                "package ${existingPackage.name}.\n"
+                "${existingPackage.name} URI root: "
+                "${existingPackage.packageUriRoot}\n"
+                "${package.name} root: ${package.root}\n");
       }
     }
-    return result;
+    return tree;
   }
 
   Iterable<Package> get packages => _packages.values;
@@ -92,14 +111,7 @@ class SimplePackageConfig implements PackageConfig {
   /// That is, the [Package.rootUri] directory is a parent directory
   /// of the [file]'s location.
   /// Returns `null` if the file does not belong to any package.
-  Package /*?*/ packageOf(Uri file) {
-    String path = file.toString();
-    for (var package in _packages.values) {
-      var rootPath = package.root.toString();
-      if (path.startsWith(rootPath)) return package;
-    }
-    return null;
-  }
+  Package /*?*/ packageOf(Uri file) => _packageTree.packageOf(file);
 
   Uri /*?*/ resolve(Uri packageUri) {
     String packageName = checkValidPackageUri(packageUri, "packageUri");
@@ -116,12 +128,15 @@ class SimplePackageConfig implements PackageConfig {
       throw PackageConfigArgumentError(nonPackageUri, "nonPackageUri",
           "Must not have query or fragment part");
     }
-    for (var package in _packages.values) {
-      var root = package.packageUriRoot;
-      if (isUriPrefix(root, nonPackageUri)) {
-        var rest = nonPackageUri.toString().substring(root.toString().length);
-        return Uri(scheme: "package", path: "${package.name}/$rest");
-      }
+    // Find package that file belongs to.
+    var package = _packageTree.packageOf(nonPackageUri);
+    if (package == null) return null;
+    // Check if it is inside the package URI root.
+    var path = nonPackageUri.toString();
+    var root = package.packageUriRoot.toString();
+    if (_beginsWith(package.root.toString().length, root, path)) {
+      var rest = path.substring(root.length);
+      return Uri(scheme: "package", path: "${package.name}/$rest");
     }
     return null;
   }
@@ -177,4 +192,108 @@ void _validatePackageData(
     throw PackageConfigArgumentError(
         languageVersion, "languageVersion", "Invalid language version format");
   }
+}
+
+abstract class PackageTree {
+  SimplePackage /*?*/ packageOf(Uri file);
+}
+
+/// Packages of a package configuration ordered by root path.
+///
+/// A package is said to be inside another package if the root path URI of
+/// the latter is a prefix of the root path URI of the former.
+/// No two packages of a package may have the same root path, so this
+/// path prefix ordering defines a tree-like partial ordering on packages
+/// of a configuration.
+///
+/// The package tree contains an ordered mapping of unrelated packages
+/// (represented by their name) to their immediately nested packages' names.
+class MutablePackageTree implements PackageTree {
+  final List<SimplePackage> packages = [];
+  Map<String, MutablePackageTree /*?*/ > /*?*/ _packageChildren;
+
+  /// Tries to (add) `package` to the tree.
+  ///
+  /// If another package is found with the *same* path, adding fails
+  /// and that package is returned. Returns `null` on success.
+  SimplePackage /*?*/ add(int start, SimplePackage package) {
+    var path = package.root.toString();
+    for (var childPackage in packages) {
+      var childPath = childPackage.root.toString();
+      assert(childPath.length > start);
+      assert(path.startsWith(childPath.substring(0, start)));
+      if (_beginsWith(start, childPath, path)) {
+        var childPathLength = childPath.length;
+        if (path.length == childPathLength) return childPackage;
+        var childPackageRoot = childPackage.packageUriRoot.toString();
+        if (_beginsWith(childPathLength, childPackageRoot, path)) {
+          // Conflict with package root of [childPackage].
+          return childPackage;
+        }
+        return _treeOf(childPackage).add(childPathLength, package);
+      }
+    }
+    packages.add(package);
+    return null;
+  }
+
+  SimplePackage /*?*/ packageOf(Uri file) {
+    return findPackageOf(0, file.toString());
+  }
+
+  /// Finds package containing [path] in this tree.
+  ///
+  /// Returns `null` if no such package is found.
+  ///
+  /// Assumes the first [start] characters of path agrees with all
+  /// the packages at this level of the tree.
+  SimplePackage /*?*/ findPackageOf(int start, String path) {
+    for (var childPackage in packages) {
+      var childPath = childPackage.root.toString();
+      if (_beginsWith(start, childPath, path)) {
+        // The [package] is inside [childPackage].
+        var childPathLength = childPath.length;
+        if (path.length == childPathLength) return childPackage;
+        var uriRoot = childPackage.packageUriRoot.toString();
+        // Is [package] is inside the URI root of [childPackage].
+        if (uriRoot.length == childPathLength ||
+            _beginsWith(childPathLength, uriRoot, path)) {
+          return childPackage;
+        }
+        // Otherwise add [package] as child of [childPackage].
+        // TODO(lrn): When NNBD comes, convert to:
+        // return _packageChildren?[childPackage.name]
+        //     ?.packageOf(childPathLength, path) ?? childPackage;
+        if (_packageChildren == null) return childPackage;
+        var childTree = _packageChildren[childPackage.name];
+        if (childTree == null) return childPackage;
+        return childTree.findPackageOf(childPathLength, path) ?? childPackage;
+      }
+    }
+    return null;
+  }
+
+  /// Returns the [PackageTree] of the children of [package].
+  ///
+  /// Ensures that the object is allocated if necessary.
+  MutablePackageTree _treeOf(SimplePackage package) =>
+      (_packageChildren ??= {})[package.name] ??= MutablePackageTree();
+}
+
+class EmptyPackageTree implements PackageTree {
+  const EmptyPackageTree();
+
+  SimplePackage packageOf(Uri file) => null;
+}
+
+/// Checks whether [longerPath] begins with [parentPath].
+///
+/// Skips checking the [start] first characters which are assumed to
+/// already have been matched.
+bool _beginsWith(int start, String parentPath, String longerPath) {
+  if (longerPath.length < parentPath.length) return false;
+  for (int i = start; i < parentPath.length; i++) {
+    if (longerPath.codeUnitAt(i) != parentPath.codeUnitAt(i)) return false;
+  }
+  return true;
 }
