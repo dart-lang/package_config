@@ -19,15 +19,11 @@ class SimplePackageConfig implements PackageConfig {
       : this._(_validateVersion(version), packages,
             [...packages]..sort(_compareRoot), extraData);
 
-  /// Expects a
+  /// Expects a list of [packages] sorted on root path.
   SimplePackageConfig._(this.version, Iterable<Package> originalPackages,
       List<Package> packages, this.extraData)
       : _packageTree = _validatePackages(originalPackages, packages),
         _packages = {for (var p in packages) p.name: p};
-
-  /// Used for sorting packages by root path.
-  static int _compareRoot(Package p1, Package p2) =>
-      p1.root.toString().compareTo(p2.root.toString());
 
   /// Creates empty configuration.
   ///
@@ -76,17 +72,19 @@ class SimplePackageConfig implements PackageConfig {
             name, "packages", "Duplicate package name");
       }
       result[name] = package;
-      var existingPackage = tree.add(0, package);
-      if (existingPackage != null) {
+      try {
+        tree.add(0, package);
+      } on ConflictException catch (e) {
         // There is a conflict with an existing package.
-        // Either they have the same root.
-        if (existingPackage.root == package.root) {
+        var existingPackage = e.existingPackage;
+        if (e.isRootConflict) {
           throw PackageConfigArgumentError(
               originalPackages,
               "packages",
               "Packages ${package.name} and ${existingPackage.name}"
                   "have the same root directory: ${package.root}.\n");
         }
+        assert(e.isPackageRootConflict);
         // Or package is inside the package URI root of the existing package.
         throw PackageConfigArgumentError(
             originalPackages,
@@ -214,9 +212,11 @@ class MutablePackageTree implements PackageTree {
 
   /// Tries to (add) `package` to the tree.
   ///
-  /// If another package is found with the *same* path, adding fails
-  /// and that package is returned. Returns `null` on success.
-  SimplePackage /*?*/ add(int start, SimplePackage package) {
+  /// Throws [ConflictException] if the added package conflicts with an
+  /// existing package.
+  /// It conflicts if it has the same root path, or if the new package
+  /// contains the existing package's package root.
+  void add(int start, SimplePackage package) {
     var path = package.root.toString();
     for (var childPackage in packages) {
       var childPath = childPackage.root.toString();
@@ -224,17 +224,18 @@ class MutablePackageTree implements PackageTree {
       assert(path.startsWith(childPath.substring(0, start)));
       if (_beginsWith(start, childPath, path)) {
         var childPathLength = childPath.length;
-        if (path.length == childPathLength) return childPackage;
+        if (path.length == childPathLength) {
+          throw ConflictException.root(package, childPackage);
+        }
         var childPackageRoot = childPackage.packageUriRoot.toString();
         if (_beginsWith(childPathLength, childPackageRoot, path)) {
-          // Conflict with package root of [childPackage].
-          return childPackage;
+          throw ConflictException.packageRoot(package, childPackage);
         }
-        return _treeOf(childPackage).add(childPathLength, package);
+        _treeOf(childPackage).add(childPathLength, package);
+        return;
       }
     }
     packages.add(package);
-    return null;
   }
 
   SimplePackage /*?*/ packageOf(Uri file) {
@@ -276,8 +277,10 @@ class MutablePackageTree implements PackageTree {
   /// Returns the [PackageTree] of the children of [package].
   ///
   /// Ensures that the object is allocated if necessary.
-  MutablePackageTree _treeOf(SimplePackage package) =>
-      (_packageChildren ??= {})[package.name] ??= MutablePackageTree();
+  MutablePackageTree _treeOf(SimplePackage package) {
+    var children = _packageChildren ??= {};
+    return children[package.name] ??= MutablePackageTree();
+  }
 }
 
 class EmptyPackageTree implements PackageTree {
@@ -297,3 +300,35 @@ bool _beginsWith(int start, String parentPath, String longerPath) {
   }
   return true;
 }
+
+/// Conflict between packages added to the same configuration.
+///
+/// The [package] conflicts with [existingPackage] if it has
+/// the same root path ([isRootConflict]) or the package URI root path
+/// of [existingPackage] is inside the root path of [package]
+/// ([isPackageRootConflict]).
+class ConflictException {
+  /// The existing package that [package] conflicts with.
+  final SimplePackage existingPackage;
+
+  /// The package that could not be added without a conflict.
+  final SimplePackage package;
+
+  /// Whether the conflict is with the package URI root of [existingPackage].
+  final bool isPackageRootConflict;
+
+  /// Creates a root conflict between [package] and [existingPackage].
+  ConflictException.root(this.package, this.existingPackage)
+      : isPackageRootConflict = false;
+
+  /// Creates a package root conflict between [package] and [existingPackage].
+  ConflictException.packageRoot(this.package, this.existingPackage)
+      : isPackageRootConflict = true;
+
+  /// WHether the conflict is with the root URI of [existingPackage].
+  bool get isRootConflict => !isPackageRootConflict;
+}
+
+/// Used for sorting packages by root path.
+int _compareRoot(Package p1, Package p2) =>
+    p1.root.toString().compareTo(p2.root.toString());

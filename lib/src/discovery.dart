@@ -110,8 +110,7 @@ Future<PackageConfig /*?*/ > findPackagConfigInDirectory(
 
 Future<File> /*?*/ checkForPackageConfigJsonFile(Directory directory) async {
   assert(directory.isAbsolute);
-  var file =
-      File(p.join(directory.path, ".dart_tool", "package_config.json"));
+  var file = File(p.join(directory.path, ".dart_tool", "package_config.json"));
   if (await file.exists()) return file;
   return null;
 }

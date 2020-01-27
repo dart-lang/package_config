@@ -202,39 +202,23 @@ void main() {
       var configBytes = utf8.encode(json.encode({
         "configVersion": 2,
         "packages": [
-          {
-            "name": "foo",
-            "rootUri": "/foo/",
-            "packageUri": "lib/"
-          },
-          {
-            "name": "bar",
-            "rootUri": "/foo/bar/",
-            "packageUri": "lib/"
-          },
-          {
-            "name": "baz",
-            "rootUri": "/foo/bar/baz/",
-            "packageUri": "lib/"
-          },
-          {
-            "name": "qux",
-            "rootUri": "/foo/qux/",
-            "packageUri": "lib/"
-          },
+          {"name": "foo", "rootUri": "/foo/", "packageUri": "lib/"},
+          {"name": "bar", "rootUri": "/foo/bar/", "packageUri": "lib/"},
+          {"name": "baz", "rootUri": "/foo/bar/baz/", "packageUri": "lib/"},
+          {"name": "qux", "rootUri": "/foo/qux/", "packageUri": "lib/"},
         ]
       }));
-      var config = parsePackageConfigBytes(configBytes,
-          Uri.parse("file:///tmp/.dart_tool/file.dart"));
+      var config = parsePackageConfigBytes(
+          configBytes, Uri.parse("file:///tmp/.dart_tool/file.dart"));
       expect(config.version, 2);
       expect(config.packageOf(Uri.parse("file:///foo/lala/lala.dart")).name,
           "foo");
-      expect(config.packageOf(Uri.parse("file:///foo/bar/lala.dart")).name,
-          "bar");
+      expect(
+          config.packageOf(Uri.parse("file:///foo/bar/lala.dart")).name, "bar");
       expect(config.packageOf(Uri.parse("file:///foo/bar/baz/lala.dart")).name,
           "baz");
-      expect(config.packageOf(Uri.parse("file:///foo/qux/lala.dart")).name,
-          "qux");
+      expect(
+          config.packageOf(Uri.parse("file:///foo/qux/lala.dart")).name, "qux");
       expect(config.toPackageUri(Uri.parse("file:///foo/lib/diz")),
           Uri.parse("package:foo/diz"));
       expect(config.toPackageUri(Uri.parse("file:///foo/bar/lib/diz")),
@@ -352,14 +336,16 @@ void main() {
           '{$cfg,"packages":[{$name,$root},{$name,"rootUri":"/other/"}]}');
       testThrows("same roots",
           '{$cfg,"packages":[{$name,$root},{"name":"bar",$root}]}');
-      testThrows( // The roots of foo and bar are the same.
+      testThrows(
+          // The roots of foo and bar are the same.
           "same roots",
           '{$cfg,"packages":[{$name,$root},{"name":"bar",$root}]}');
-      testThrows( // The root of bar is inside the package root of foo.
+      testThrows(
+          // The root of bar is inside the package root of foo.
           "inside lib",
           '{$cfg,"packages":['
-            '{"name":"foo","rootUri":"/foo/","packageUri":"lib/"},'
-            '{"name":"bar","rootUri":"/foo/lib/qux/"}]}');
+              '{"name":"foo","rootUri":"/foo/","packageUri":"lib/"},'
+              '{"name":"bar","rootUri":"/foo/lib/qux/"}]}');
     });
   });
 }
