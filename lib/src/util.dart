@@ -8,8 +8,6 @@ library package_config.util;
 import 'dart:io';
 import 'dart:typed_data';
 
-import "package:charcode/ascii.dart";
-
 import "errors.dart";
 
 // All ASCII characters that are valid in a package name, with space
@@ -46,6 +44,11 @@ int checkPackageName(String string) {
 }
 
 /// Validate that a [Uri] is a valid `package:` URI.
+///
+/// Used to validate user input.
+///
+/// Returns the package name extracted from the package URI,
+/// which is the path segment between `package:` and the first `/`.
 String checkValidPackageUri(Uri packageUri, String name) {
   if (packageUri.scheme != "package") {
     throw PackageConfigArgumentError(packageUri, name, "Not a package: URI");
@@ -120,11 +123,11 @@ int checkValidVersionNumber(String version) {
     int char = version.codeUnitAt(index++);
     int digit = char ^ 0x30;
     if (digit != 0) {
-      if (digit < 9) {
+      if (digit <= 9) {
         while (index < version.length) {
           char = version.codeUnitAt(index++);
           digit = char ^ 0x30;
-          if (digit < 9) continue;
+          if (digit <= 9) continue;
           if (char == 0x2e /*.*/) {
             if (dotsSeen > 0) return index - 1;
             dotsSeen = 1;
@@ -152,13 +155,12 @@ int checkValidVersionNumber(String version) {
 ///
 /// * It must have a scheme.
 /// * It must not have a query or fragment.
-/// * The path must start and end with `/`.
+/// * The path must end with `/`.
 bool isAbsoluteDirectoryUri(Uri uri) {
   if (uri.hasQuery) return false;
   if (uri.hasFragment) return false;
   if (!uri.hasScheme) return false;
   var path = uri.path;
-  if (!path.startsWith("/")) return false;
   if (!path.endsWith("/")) return false;
   return true;
 }
@@ -302,3 +304,60 @@ Future<Uint8List /*?*/ > _httpGet(Uri uri) async {
   }
   return result;
 }
+
+/// The file name of a path.
+///
+/// The file name is everything after the last occurrence of
+/// [Platform.pathSeparator].
+String fileName(String path) {
+  var separator = Platform.pathSeparator;
+  int lastSeparator = path.lastIndexOf(separator);
+  if (lastSeparator < 0) return path;
+  return path.substring(lastSeparator + separator.length);
+}
+
+/// The file name of a path.
+///
+/// The file name is everything before the last occurrence of
+/// [Platform.pathSeparator].
+String dirName(String path) {
+  var separator = Platform.pathSeparator;
+  int lastSeparator = path.lastIndexOf(separator);
+  if (lastSeparator < 0) return "";
+  return path.substring(0, lastSeparator);
+}
+
+/// Join path parts with the [Platform.pathSeparator].
+String pathJoin(String part1, String part2, [String part3]) {
+  var separator = Platform.pathSeparator;
+  if (part3 == null) {
+    return "$part1$separator$part2";
+  }
+  return "$part1$separator$part2$separator$part3";
+}
+
+/// Join an unknown number of path parts with [Platform.pathSeparator].
+String pathJoinAll(Iterable<String> parts) =>
+    parts.join(Platform.pathSeparator);
+
+// Character constants used by this package.
+/// "Line feed" control character.
+const int $lf = 0x0a;
+
+/// "Carriage return" control character.
+const int $cr = 0x0d;
+
+/// Space character.
+const int $space = 0x20;
+
+/// Character `#`.
+const int $hash = 0x23;
+
+/// Character `.`.
+const int $dot = 0x2e;
+
+/// Character `:`.
+const int $colon = 0x3a;
+
+/// Character `{`.
+const int $lbrace = 0x7b;

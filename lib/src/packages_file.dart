@@ -3,9 +3,8 @@
 // BSD-style license that can be found in the LICENSE file.
 
 import "package_config_impl.dart";
-import "package:charcode/ascii.dart";
 
-import "util.dart" show isValidPackageName, relativizeUri;
+import "util.dart";
 import "errors.dart";
 
 /// Parses a `.packages` file into a [PackageConfig].
@@ -25,10 +24,12 @@ import "errors.dart";
 /// Returns a simple package configuration where each package's
 /// [Package.packageUriRoot] is the same as its [Package.root]
 /// and it has no [Package.languageVersion].
-PackageConfig parse(List<int> source, Uri baseLocation) {
+PackageConfig parse(
+    List<int> source, Uri baseLocation, void onError(Object error)) {
   if (baseLocation.isScheme("package")) {
-    throw PackageConfigArgumentError(
-        baseLocation, "baseLocation", "Must not be a package: URI");
+    onError(PackageConfigArgumentError(
+        baseLocation, "baseLocation", "Must not be a package: URI"));
+    return PackageConfig.empty;
   }
   int index = 0;
   List<Package> packages = [];
@@ -43,10 +44,12 @@ PackageConfig parse(List<int> source, Uri baseLocation) {
       continue;
     }
     if (char == $colon) {
-      throw PackageConfigFormatException(
-          "Missing package name", source, index - 1);
+      onError(PackageConfigFormatException(
+          "Missing package name", source, index - 1));
+      isComment = true;
+    } else {
+      isComment = char == $hash;
     }
-    isComment = char == $hash;
     while (index < source.length) {
       char = source[index++];
       if (char == $colon && separatorIndex < 0) {
@@ -58,36 +61,55 @@ PackageConfig parse(List<int> source, Uri baseLocation) {
     }
     if (isComment) continue;
     if (separatorIndex < 0) {
-      throw PackageConfigFormatException("No ':' on line", source, index - 1);
+      onError(
+          PackageConfigFormatException("No ':' on line", source, index - 1));
+      continue;
     }
     var packageName = String.fromCharCodes(source, start, separatorIndex);
     if (!isValidPackageName(packageName)) {
-      throw PackageConfigFormatException(
-          "Not a valid package name", packageName, 0);
+      onError(PackageConfigFormatException(
+          "Not a valid package name", packageName, 0));
     }
     var packageValue = String.fromCharCodes(source, separatorIndex + 1, end);
-    Uri packageLocation = baseLocation.resolve(packageValue);
+    Uri packageLocation;
+    try {
+      packageLocation = baseLocation.resolve(packageValue);
+    } on FormatException catch(e) {
+      onError(e);
+      continue;
+    }
     if (packageLocation.isScheme("package")) {
-      throw PackageConfigFormatException(
-          "Package URI as location for package", source, separatorIndex + 1);
+      onError(PackageConfigFormatException(
+          "Package URI as location for package", source, separatorIndex + 1));
+      continue;
     }
     if (packageLocation.hasQuery || packageLocation.hasFragment) {
-      throw PackageConfigFormatException(
-          "Location URI must not have query or fragment", source, start);
+      onError(PackageConfigFormatException(
+          "Location URI must not have query or fragment", source, start));
     }
     if (!packageLocation.path.endsWith('/')) {
       packageLocation =
           packageLocation.replace(path: packageLocation.path + "/");
     }
     if (packageNames.contains(packageName)) {
-      throw PackageConfigFormatException(
-          "Same package name occured more than once", source, start);
+      onError(PackageConfigFormatException(
+          "Same package name occured more than once", source, start));
+      continue;
     }
-    packages.add(SimplePackage(
-        packageName, packageLocation, packageLocation, null, null));
-    packageNames.add(packageName);
+    var package = SimplePackage.validate(
+        packageName, packageLocation, packageLocation, null, null, (error) {
+      if (error is ArgumentError) {
+        onError(PackageConfigFormatException(error.message, source));
+      } else {
+        onError(error);
+      }
+    });
+    if (package != null) {
+      packages.add(package);
+      packageNames.add(packageName);
+    }
   }
-  return SimplePackageConfig(1, packages, null);
+  return SimplePackageConfig(1, packages, null, onError);
 }
 
 /// Writes the configuration to a [StringSink].
@@ -137,7 +159,7 @@ void write(StringSink output, PackageConfig config,
     }
     output.write(packageName);
     output.write(':');
-    // If baseUri provided, make uri relative.
+    // If baseUri is provided, make the URI relative to baseUri.
     if (baseUri != null) {
       uri = relativizeUri(uri, baseUri);
     }

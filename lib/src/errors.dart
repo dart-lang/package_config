@@ -22,3 +22,6 @@ class PackageConfigFormatException extends FormatException
       [int /*?*/ index])
       : super(message, value, index);
 }
+
+/// The default `onError` handler.
+void /*Never*/ throwError(Object error) => throw error;

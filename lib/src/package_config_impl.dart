@@ -14,16 +14,18 @@ class SimplePackageConfig implements PackageConfig {
   final PackageTree _packageTree;
   final dynamic extraData;
 
-  SimplePackageConfig(int version, Iterable<Package> packages,
-      [dynamic extraData])
-      : this._(_validateVersion(version), packages,
-            [...packages]..sort(_compareRoot), extraData);
+  factory SimplePackageConfig(int version, Iterable<Package> packages,
+      [dynamic extraData, void onError(Object error)]) {
+    onError ??= throwError;
+    var validVersion = _validateVersion(version, onError);
+    var sortedPackages = [...packages]..sort(_compareRoot);
+    var packageTree = _validatePackages(packages, sortedPackages, onError);
+    return SimplePackageConfig._(validVersion, packageTree,
+        {for (var p in packageTree.allPackages) p.name: p}, extraData);
+  }
 
-  /// Expects a list of [packages] sorted on root path.
-  SimplePackageConfig._(this.version, Iterable<Package> originalPackages,
-      List<Package> packages, this.extraData)
-      : _packageTree = _validatePackages(originalPackages, packages),
-        _packages = {for (var p in packages) p.name: p};
+  SimplePackageConfig._(
+      this.version, this._packageTree, this._packages, this.extraData);
 
   /// Creates empty configuration.
   ///
@@ -35,66 +37,79 @@ class SimplePackageConfig implements PackageConfig {
         _packages = const <String, Package>{},
         extraData = null;
 
-  static int _validateVersion(int version) {
+  static int _validateVersion(int version, void onError(Object error)) {
     if (version < 0 || version > PackageConfig.maxVersion) {
-      throw PackageConfigArgumentError(version, "version",
-          "Must be in the range 1 to ${PackageConfig.maxVersion}");
+      onError(PackageConfigArgumentError(version, "version",
+          "Must be in the range 1 to ${PackageConfig.maxVersion}"));
+      return 2; // The minimal version supporting a SimplePackageConfig.
     }
     return version;
   }
 
-  static PackageTree _validatePackages(
-      Iterable<Package> originalPackages, List<Package> packages) {
+  static PackageTree _validatePackages(Iterable<Package> originalPackages,
+      List<Package> packages, void onError(Object error)) {
     // Assumes packages are sorted.
     Map<String, Package> result = {};
     var tree = MutablePackageTree();
-    SimplePackage package;
     for (var originalPackage in packages) {
+      if (originalPackage == null) {
+        onError(ArgumentError.notNull("element of packages"));
+        continue;
+      }
+      SimplePackage package;
       if (originalPackage is! SimplePackage) {
         // SimplePackage validates these properties.
-        try {
-          package = SimplePackage(
-              originalPackage.name,
-              originalPackage.root,
-              originalPackage.packageUriRoot,
-              originalPackage.languageVersion,
-              originalPackage.extraData);
-        } catch (e) {
-          throw PackageConfigArgumentError(
-              packages, "packages", "Package ${package.name}: ${e.message}");
-        }
+        package = SimplePackage.validate(
+            originalPackage.name,
+            originalPackage.root,
+            originalPackage.packageUriRoot,
+            originalPackage.languageVersion,
+            originalPackage.extraData, (error) {
+          if (error is PackageConfigArgumentError) {
+            onError(PackageConfigArgumentError(packages, "packages",
+                "Package ${package.name}: ${error.message}"));
+          } else {
+            onError(error);
+          }
+        });
+        if (package == null) continue;
       } else {
         package = originalPackage;
       }
       var name = package.name;
       if (result.containsKey(name)) {
-        throw PackageConfigArgumentError(
-            name, "packages", "Duplicate package name");
+        onError(PackageConfigArgumentError(
+            name, "packages", "Duplicate package name"));
+        continue;
       }
       result[name] = package;
-      try {
-        tree.add(0, package);
-      } on ConflictException catch (e) {
-        // There is a conflict with an existing package.
-        var existingPackage = e.existingPackage;
-        if (e.isRootConflict) {
-          throw PackageConfigArgumentError(
-              originalPackages,
-              "packages",
-              "Packages ${package.name} and ${existingPackage.name}"
-                  "have the same root directory: ${package.root}.\n");
+      tree.add(0, package, (error) {
+        if (error is ConflictException) {
+          // There is a conflict with an existing package.
+          var existingPackage = error.existingPackage;
+          if (error.isRootConflict) {
+            onError(PackageConfigArgumentError(
+                originalPackages,
+                "packages",
+                "Packages ${package.name} and ${existingPackage.name}"
+                    "have the same root directory: ${package.root}.\n"));
+          } else {
+            assert(error.isPackageRootConflict);
+            // Package is inside the package URI root of the existing package.
+            onError(PackageConfigArgumentError(
+                originalPackages,
+                "packages",
+                "Package ${package.name} is inside the package URI root of "
+                    "package ${existingPackage.name}.\n"
+                    "${existingPackage.name} URI root: "
+                    "${existingPackage.packageUriRoot}\n"
+                    "${package.name} root: ${package.root}\n"));
+          }
+        } else {
+          // Any other error.
+          onError(error);
         }
-        assert(e.isPackageRootConflict);
-        // Or package is inside the package URI root of the existing package.
-        throw PackageConfigArgumentError(
-            originalPackages,
-            "packages",
-            "Package ${package.name} is inside the package URI root of "
-                "package ${existingPackage.name}.\n"
-                "${existingPackage.name} URI root: "
-                "${existingPackage.packageUriRoot}\n"
-                "${package.name} root: ${package.root}\n");
-      }
+      });
     }
     return tree;
   }
@@ -154,45 +169,70 @@ class SimplePackage implements Package {
   /// Creates a [SimplePackage] with the provided content.
   ///
   /// The provided arguments must be valid.
-  factory SimplePackage(String name, Uri root, Uri packageUriRoot,
-      String /*?*/ languageVersion, dynamic extraData) {
-    _validatePackageData(name, root, packageUriRoot, languageVersion);
+  ///
+  /// If the arguments are invalid then the error is reported by
+  /// calling [onError], then the erroneous entry is ignored.
+  ///
+  /// Returns `null` if the input is invalid and an approximately valid package
+  /// cannot be salvaged from the input.
+  static SimplePackage /*?*/ validate(
+      String name,
+      Uri root,
+      Uri packageUriRoot,
+      String /*?*/ languageVersion,
+      dynamic extraData,
+      void onError(Object error)) {
+    bool fatalError = false;
+    if (!isValidPackageName(name)) {
+      onError(
+          PackageConfigArgumentError(name, "name", "Not a valid package name"));
+    }
+    if (root.isScheme("package")) {
+      onError(PackageConfigArgumentError("$root", "root",
+          "Must not be a package URI"));
+      fatalError = true;
+    } else if (!isAbsoluteDirectoryUri(root)) {
+      onError(PackageConfigArgumentError(
+          "$root",
+          "root",
+          "Not an absolute URI with no query or fragment "
+              "with a path ending in /"));
+      // Try to recover. If the URI has a scheme,
+      // then ensure that the path ends with `/`.
+      if (!root.hasScheme) {
+        fatalError = true;
+      } else if (!root.path.endsWith("/")) {
+        root = root.replace(path: root.path + "/");
+      }
+    }
+    if (!fatalError) {
+      if (!isAbsoluteDirectoryUri(packageUriRoot)) {
+        onError(PackageConfigArgumentError(
+            packageUriRoot,
+            "packageUriRoot",
+            "Not an absolute URI with no query or fragment "
+                "with a path ending in /"));
+        packageUriRoot = root;
+      } else if (!isUriPrefix(root, packageUriRoot)) {
+        onError(PackageConfigArgumentError(packageUriRoot, "packageUriRoot",
+            "The package URI root is not below the package root"));
+        packageUriRoot = root;
+      }
+    }
+    if (languageVersion != null &&
+        checkValidVersionNumber(languageVersion) >= 0) {
+      onError(PackageConfigArgumentError(languageVersion, "languageVersion",
+          "Invalid language version format"));
+      languageVersion = null;
+    }
+    if (fatalError) return null;
     return SimplePackage._(
         name, root, packageUriRoot, languageVersion, extraData);
   }
 }
 
-void _validatePackageData(
-    String name, Uri root, Uri packageUriRoot, String /*?*/ languageVersion) {
-  if (!isValidPackageName(name)) {
-    throw PackageConfigArgumentError(name, "name", "Not a valid package name");
-  }
-  if (!isAbsoluteDirectoryUri(root)) {
-    throw PackageConfigArgumentError(
-        "$root",
-        "root",
-        "Not an absolute URI with no query or fragment "
-            "with a path ending in /");
-  }
-  if (!isAbsoluteDirectoryUri(packageUriRoot)) {
-    throw PackageConfigArgumentError(
-        packageUriRoot,
-        "packageUriRoot",
-        "Not an absolute URI with no query or fragment "
-            "with a path ending in /");
-  }
-  if (!isUriPrefix(root, packageUriRoot)) {
-    throw PackageConfigArgumentError(packageUriRoot, "packageUriRoot",
-        "The package URI root is not below the package root");
-  }
-  if (languageVersion != null &&
-      checkValidVersionNumber(languageVersion) >= 0) {
-    throw PackageConfigArgumentError(
-        languageVersion, "languageVersion", "Invalid language version format");
-  }
-}
-
 abstract class PackageTree {
+  Iterable<Package> get allPackages;
   SimplePackage /*?*/ packageOf(Uri file);
 }
 
@@ -210,13 +250,24 @@ class MutablePackageTree implements PackageTree {
   final List<SimplePackage> packages = [];
   Map<String, MutablePackageTree /*?*/ > /*?*/ _packageChildren;
 
+  Iterable<Package> get allPackages sync* {
+    for (var package in packages) yield package;
+    if (_packageChildren != null) {
+      for (var tree in _packageChildren.values) yield* tree.allPackages;
+    }
+  }
+
   /// Tries to (add) `package` to the tree.
   ///
-  /// Throws [ConflictException] if the added package conflicts with an
+  /// Reports a [ConflictException] if the added package conflicts with an
   /// existing package.
   /// It conflicts if it has the same root path, or if the new package
   /// contains the existing package's package root.
-  void add(int start, SimplePackage package) {
+  ///
+  /// If a conflict is detected between [package] and a previous package,
+  /// then [onError] is called with a [ConflictException] object
+  /// and the [package] is not added to the tree.
+  void add(int start, SimplePackage package, void onError(Object error)) {
     var path = package.root.toString();
     for (var childPackage in packages) {
       var childPath = childPackage.root.toString();
@@ -225,13 +276,15 @@ class MutablePackageTree implements PackageTree {
       if (_beginsWith(start, childPath, path)) {
         var childPathLength = childPath.length;
         if (path.length == childPathLength) {
-          throw ConflictException.root(package, childPackage);
+          onError(ConflictException.root(package, childPackage));
+          return;
         }
         var childPackageRoot = childPackage.packageUriRoot.toString();
         if (_beginsWith(childPathLength, childPackageRoot, path)) {
-          throw ConflictException.packageRoot(package, childPackage);
+          onError(ConflictException.packageRoot(package, childPackage));
+          return;
         }
-        _treeOf(childPackage).add(childPathLength, package);
+        _treeOf(childPackage).add(childPathLength, package, onError);
         return;
       }
     }
@@ -285,6 +338,8 @@ class MutablePackageTree implements PackageTree {
 
 class EmptyPackageTree implements PackageTree {
   const EmptyPackageTree();
+
+  Iterable<Package> get allPackages => const Iterable<Package>.empty();
 
   SimplePackage packageOf(Uri file) => null;
 }

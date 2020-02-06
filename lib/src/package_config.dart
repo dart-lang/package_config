@@ -2,6 +2,7 @@
 // for details. All rights reserved. Use of this source code is governed by a
 // BSD-style license that can be found in the LICENSE file.
 
+import 'errors.dart';
 import "package_config_impl.dart";
 
 /// A package configuration.
@@ -34,7 +35,7 @@ abstract class PackageConfig {
   ///
   /// The version of the resulting configuration is always [maxVersion].
   factory PackageConfig(Iterable<Package> packages, {dynamic extraData}) =>
-      SimplePackageConfig(maxVersion, packages);
+      SimplePackageConfig(maxVersion, packages, extraData);
 
   /// The configuration version number.
   ///
@@ -126,7 +127,8 @@ abstract class Package {
           {Uri /*?*/ packageUriRoot,
           String /*?*/ languageVersion,
           dynamic extraData}) =>
-      SimplePackage(name, root, packageUriRoot, languageVersion, extraData);
+      SimplePackage.validate(
+          name, root, packageUriRoot, languageVersion, extraData, throwError);
 
   /// The package-name of the package.
   String get name;
