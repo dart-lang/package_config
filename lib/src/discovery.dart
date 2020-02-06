@@ -94,11 +94,8 @@ Future<PackageConfig /*?*/ > findPackageConfigUri(
 ///
 /// Loads the file, if it is there, and returns the resulting [PackageConfig].
 /// Returns `null` if the file isn't there.
-/// Throws [FormatException] if a file is there but is not valid.
-///
-/// If [extraData] is supplied and the `package_config.json` contains extra
-/// entries in the top JSON object, those extra entries are stored into
-/// [extraData].
+/// Reports a [FormatException] if a file is there but the content is not valid.
+/// If the file exists, but fails to be read, the file system error is reported.
 ///
 /// If [onError] is supplied, parsing errors are reported using that, and
 /// a best-effort attempt is made to return a package configuration.

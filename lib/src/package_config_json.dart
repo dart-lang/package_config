@@ -92,7 +92,13 @@ Future<PackageConfig> readAnyConfigFileUri(
     }
     loader = defaultLoader;
   }
-  var bytes = await loader(file);
+  Uint8List bytes;
+  try {
+    bytes = await loader(file);
+  } catch (e) {
+    onError(e);
+    return const SimplePackageConfig.empty();
+  }
   if (bytes == null) {
     onError(PackageConfigArgumentError(
         file.toString(), "file", "File cannot be read"));
@@ -104,7 +110,13 @@ Future<PackageConfig> readAnyConfigFileUri(
     if (preferNewest) {
       // Check if there is a package_config.json file.
       var alternateFile = file.resolveUri(packageConfigJsonPath);
-      var alternateBytes = await loader(alternateFile);
+      Uint8List alternateBytes;
+      try {
+        alternateBytes = await loader(alternateFile);
+      } catch (e) {
+        onError(e);
+        return const SimplePackageConfig.empty();
+      }
       if (alternateBytes != null) {
         return parsePackageConfigBytes(alternateBytes, alternateFile, onError);
       }
@@ -119,8 +131,9 @@ Future<PackageConfig> readPackageConfigJsonFile(
   Uint8List bytes;
   try {
     bytes = await file.readAsBytes();
-  } catch (_) {
-    return null;
+  } catch (error) {
+    onError(error);
+    return const SimplePackageConfig.empty();
   }
   return parsePackageConfigBytes(bytes, file.uri, onError);
 }
@@ -130,8 +143,9 @@ Future<PackageConfig> readDotPackagesFile(
   Uint8List bytes;
   try {
     bytes = await file.readAsBytes();
-  } catch (_) {
-    return null;
+  } catch (error) {
+    onError(error);
+    return const SimplePackageConfig.empty();
   }
   return packages_file.parse(bytes, file.uri, onError);
 }
@@ -146,9 +160,7 @@ PackageConfig parsePackageConfigBytes(
     jsonObject = _jsonUtf8Decoder.convert(bytes);
   } on FormatException catch (e) {
     onError(PackageConfigFormatException(e.message, e.source, e.offset));
-    return null;
-  } on Object catch (e) {
-    print("WTF: $e");
+    return const SimplePackageConfig.empty();
   }
   return parsePackageConfigJson(jsonObject, file, onError);
 }
