@@ -261,8 +261,7 @@ PackageConfig parsePackageConfigJson(
     if (languageVersion != null) {
       version = parseLanguageVersion(languageVersion, onError);
     } else if (hasVersion) {
-      version =
-          SimpleInvalidLanguageVersion("Non-string languageVersion value");
+      version = SimpleInvalidLanguageVersion("invalid");
     }
 
     return SimplePackage.validate(name, root, packageRoot, version, extraData,

@@ -153,10 +153,11 @@ main() {
         ".packages": "not a .packages file",
       }, (Directory directory) async {
         bool hadError = false;
-        await findPackageConfig(directory, onError: expectAsync1((error) {
-          hadError = true;
-          expect(error, isA<FormatException>());
-        }, max: -1));
+        await findPackageConfig(directory,
+            onError: expectAsync1((error) {
+              hadError = true;
+              expect(error, isA<FormatException>());
+            }, max: -1));
         expect(hadError, true);
       });
 
@@ -164,10 +165,11 @@ main() {
         ".packages": packageConfigFile,
       }, (Directory directory) async {
         bool hadError = false;
-        await findPackageConfig(directory, onError: expectAsync1((error) {
-          hadError = true;
-          expect(error, isA<FormatException>());
-        }, max: -1));
+        await findPackageConfig(directory,
+            onError: expectAsync1((error) {
+              hadError = true;
+              expect(error, isA<FormatException>());
+            }, max: -1));
         expect(hadError, true);
       });
 
@@ -177,10 +179,11 @@ main() {
         }
       }, (Directory directory) async {
         bool hadError = false;
-        await findPackageConfig(directory, onError: expectAsync1((error) {
-          hadError = true;
-          expect(error, isA<FormatException>());
-        }, max: -1));
+        await findPackageConfig(directory,
+            onError: expectAsync1((error) {
+              hadError = true;
+              expect(error, isA<FormatException>());
+            }, max: -1));
         expect(hadError, true);
       });
 
@@ -188,12 +191,13 @@ main() {
         ".dart_tool": {
           "package_config.json": packagesFile,
         }
-      }, (Directory directory) async{
+      }, (Directory directory) async {
         bool hadError = false;
-        await findPackageConfig(directory, onError: expectAsync1((error) {
-          hadError = true;
-          expect(error, isA<FormatException>());
-        }, max: -1));
+        await findPackageConfig(directory,
+            onError: expectAsync1((error) {
+              hadError = true;
+              expect(error, isA<FormatException>());
+            }, max: -1));
         expect(hadError, true);
       });
     });
@@ -281,10 +285,11 @@ main() {
     fileTest("no config found, handled", {}, (Directory directory) async {
       File file = dirFile(directory, "anyname");
       bool hadError = false;
-      await loadPackageConfig(file, onError: expectAsync1((error) {
-        hadError = true;
-        expect(error, isA<FileSystemException>());
-      }, max: -1));
+      await loadPackageConfig(file,
+          onError: expectAsync1((error) {
+            hadError = true;
+            expect(error, isA<FileSystemException>());
+          }, max: -1));
       expect(hadError, true);
     });
 

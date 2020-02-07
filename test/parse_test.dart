@@ -128,7 +128,7 @@ void main() {
       expect(bar, isNotNull);
       expect(bar.root, Uri.parse("file:///bar/"));
       expect(bar.packageUriRoot, Uri.parse("file:///bar/lib/"));
-      expect(bar.languageVersion, LanguageVersion(9999 ,9999));
+      expect(bar.languageVersion, LanguageVersion(9999, 9999));
       expect(bar.extraData, null);
 
       var baz = config["baz"];
