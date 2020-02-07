@@ -1,5 +1,7 @@
-## 2.1.0
+## 3.0.0
 
+- Make the language version be represented as a `LanguageVersion` class
+  instead of a string.
 - Made error handling interceptable. Passing an `onError` handler
   makes the parsers attempt to do a best-effort error correction after
   detecting an error.

@@ -7,7 +7,7 @@ import "dart:io";
 import 'dart:typed_data';
 
 import "package:test/test.dart";
-import "package:package_config_2/src/util.dart";
+import "package:package_config/src/util.dart";
 
 /// Creates a directory structure from [description] and runs [fileTest].
 ///
