@@ -223,6 +223,7 @@ PackageConfig parsePackageConfigJson(
     Map<String, dynamic> /*?*/ extraData;
     bool hasName = false;
     bool hasRoot = false;
+    bool hasVersion = false;
     entry.forEach((key, value) {
       switch (key) {
         case _nameKey:
@@ -237,6 +238,7 @@ PackageConfig parsePackageConfigJson(
           packageUri = checkType<String>(value, _packageUriKey, name);
           break;
         case _languageVersionKey:
+          hasVersion = true;
           languageVersion = checkType<String>(value, _languageVersionKey, name);
           break;
         default:
@@ -258,6 +260,9 @@ PackageConfig parsePackageConfigJson(
     LanguageVersion /*?*/ version;
     if (languageVersion != null) {
       version = parseLanguageVersion(languageVersion, onError);
+    } else if (hasVersion) {
+      version =
+          SimpleInvalidLanguageVersion("Non-string languageVersion value");
     }
 
     return SimplePackage.validate(name, root, packageRoot, version, extraData,
@@ -334,8 +339,9 @@ Future<void> writePackageConfigJson(
           _rootUriKey: relativizeUri(package.root, baseUri),
           if (package.root != package.packageUriRoot)
             _packageUriKey: relativizeUri(package.packageUriRoot, package.root),
-          if (package.languageVersion != null)
-            _languageVersionKey: package.languageVersion,
+          if (package.languageVersion != null &&
+              package.languageVersion is! InvalidLanguageVersion)
+            _languageVersionKey: package.languageVersion.toString(),
           ...?_extractExtraData(package.extraData, _packageNames),
         }
     ],
