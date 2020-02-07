@@ -202,7 +202,7 @@ class SimplePackage implements Package {
       onError(PackageConfigArgumentError(
           "$root",
           "root",
-          "Not an absolute URI with no query or fragment "
+          "In package $name: Not an absolute URI with no query or fragment "
               "with a path ending in /"));
       // Try to recover. If the URI has a scheme,
       // then ensure that the path ends with `/`.
@@ -217,7 +217,7 @@ class SimplePackage implements Package {
         onError(PackageConfigArgumentError(
             packageUriRoot,
             "packageUriRoot",
-            "Not an absolute URI with no query or fragment "
+            "In package $name: Not an absolute URI with no query or fragment "
                 "with a path ending in /"));
         packageUriRoot = root;
       } else if (!isUriPrefix(root, packageUriRoot)) {

@@ -254,8 +254,12 @@ PackageConfig parsePackageConfigJson(
     }
     if (name == null || rootUri == null) return null;
     Uri root = baseLocation.resolve(rootUri);
+    if (!root.path.endsWith("/")) root = root.replace(path: root.path + "/");
     Uri packageRoot = root;
     if (packageUri != null) packageRoot = root.resolve(packageUri);
+    if (!packageRoot.path.endsWith("/")) {
+      packageRoot = packageRoot.replace(path: packageRoot.path + "/");
+    }
 
     LanguageVersion /*?*/ version;
     if (languageVersion != null) {

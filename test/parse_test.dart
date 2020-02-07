@@ -99,6 +99,11 @@ void main() {
               "name": "baz",
               "rootUri": "../",
               "packageUri": "lib/"
+            },
+            {
+              "name": "noslash",
+              "rootUri": "../noslash",
+              "packageUri": "lib"
             }
           ],
           "generator": "pub",
@@ -108,7 +113,8 @@ void main() {
       var config = parsePackageConfigBytes(utf8.encode(packageConfigFile),
           Uri.parse("file:///tmp/.dart_tool/file.dart"), throwError);
       expect(config.version, 2);
-      expect({for (var p in config.packages) p.name}, {"foo", "bar", "baz"});
+      expect({for (var p in config.packages) p.name},
+          {"foo", "bar", "baz", "noslash"});
 
       expect(config.resolve(pkg("foo", "foo.dart")),
           Uri.parse("file:///foo/lib/foo.dart"));
@@ -136,6 +142,13 @@ void main() {
       expect(baz.root, Uri.parse("file:///tmp/"));
       expect(baz.packageUriRoot, Uri.parse("file:///tmp/lib/"));
       expect(baz.languageVersion, null);
+
+      // No slash after root or package root. One is inserted.
+      var noslash = config["noslash"];
+      expect(noslash, isNotNull);
+      expect(noslash.root, Uri.parse("file:///tmp/noslash/"));
+      expect(noslash.packageUriRoot, Uri.parse("file:///tmp/noslash/lib/"));
+      expect(noslash.languageVersion, null);
 
       expect(config.extraData, {
         "generator": "pub",
