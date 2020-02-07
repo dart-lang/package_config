@@ -66,8 +66,7 @@ Future<PackageConfig> readAnyConfigFile(
           return const SimplePackageConfig.empty();
         }
         if (bytes != null) {
-          return parsePackageConfigBytes(
-              bytes, alternateFile.uri, onError);
+          return parsePackageConfigBytes(bytes, alternateFile.uri, onError);
         }
       }
     }
@@ -256,8 +255,13 @@ PackageConfig parsePackageConfigJson(
     Uri packageRoot = root;
     if (packageUri != null) packageRoot = root.resolve(packageUri);
 
-    return SimplePackage.validate(
-        name, root, packageRoot, languageVersion, extraData, (error) {
+    LanguageVersion /*?*/ version;
+    if (languageVersion != null) {
+      version = parseLanguageVersion(languageVersion, onError);
+    }
+
+    return SimplePackage.validate(name, root, packageRoot, version, extraData,
+        (error) {
       if (error is ArgumentError) {
         onError(
             PackageConfigFormatException(error.message, error.invalidValue));

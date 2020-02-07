@@ -103,54 +103,6 @@ String checkValidPackageUri(Uri packageUri, String name) {
   return packageName;
 }
 
-/// Checks whether [version] is a valid Dart language version string.
-///
-/// The format is (as RegExp) `^(0|[1-9]\d+)\.(0|[1-9]\d+)$`.
-///
-/// Returns the position of the first invalid character, or -1 if
-/// the string is valid.
-/// If the string is terminated early, the result is the length of the string.
-int checkValidVersionNumber(String version) {
-  if (version == null) {
-    return 0;
-  }
-  int index = 0;
-  int dotsSeen = 0;
-  outer:
-  for (;;) {
-    // Check for numeral.
-    if (index == version.length) return index;
-    int char = version.codeUnitAt(index++);
-    int digit = char ^ 0x30;
-    if (digit != 0) {
-      if (digit <= 9) {
-        while (index < version.length) {
-          char = version.codeUnitAt(index++);
-          digit = char ^ 0x30;
-          if (digit <= 9) continue;
-          if (char == 0x2e /*.*/) {
-            if (dotsSeen > 0) return index - 1;
-            dotsSeen = 1;
-            continue outer;
-          }
-          return index - 1;
-        }
-        if (dotsSeen > 0) return -1;
-        return index;
-      }
-      return index - 1;
-    }
-    // Leading zero means numeral is over.
-    if (index >= version.length) {
-      if (dotsSeen > 0) return -1;
-      return index;
-    }
-    if (dotsSeen > 0) return index;
-    char = version.codeUnitAt(index++);
-    if (char != 0x2e /*.*/) return index - 1;
-  }
-}
-
 /// Checks whether URI is just an absolute directory.
 ///
 /// * It must have a scheme.

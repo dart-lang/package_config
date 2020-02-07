@@ -6,6 +6,7 @@ import "dart:convert";
 
 import "package:test/test.dart";
 
+import "package:package_config/package_config.dart";
 import "package:package_config/src/packages_file.dart" as packages;
 import "package:package_config/src/package_config_json.dart";
 import "src/util.dart";
@@ -92,7 +93,7 @@ void main() {
               "name": "bar",
               "rootUri": "/bar/",
               "packageUri": "lib/",
-              "languageVersion": "100.100"
+              "languageVersion": "9999.9999"
             },
             {
               "name": "baz",
@@ -120,14 +121,14 @@ void main() {
       expect(foo, isNotNull);
       expect(foo.root, Uri.parse("file:///foo/"));
       expect(foo.packageUriRoot, Uri.parse("file:///foo/lib/"));
-      expect(foo.languageVersion, "2.5");
+      expect(foo.languageVersion, LanguageVersion(2, 5));
       expect(foo.extraData, {"nonstandard": true});
 
       var bar = config["bar"];
       expect(bar, isNotNull);
       expect(bar.root, Uri.parse("file:///bar/"));
       expect(bar.packageUriRoot, Uri.parse("file:///bar/lib/"));
-      expect(bar.languageVersion, "100.100");
+      expect(bar.languageVersion, LanguageVersion(9999 ,9999));
       expect(bar.extraData, null);
 
       var baz = config["baz"];

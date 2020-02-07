@@ -14,7 +14,8 @@ import "src/errors.dart" show throwError;
 import "src/package_config.dart";
 import "src/package_config_json.dart";
 
-export "src/package_config.dart" show PackageConfig, Package;
+export "src/package_config.dart"
+    show PackageConfig, Package, LanguageVersion, InvalidLanguageVersion;
 export "src/errors.dart" show PackageConfigError;
 
 /// Reads a specific package configuration file.
