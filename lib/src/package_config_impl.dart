@@ -183,13 +183,15 @@ class SimplePackage implements Package {
       dynamic extraData,
       void onError(Object error)) {
     bool fatalError = false;
-    if (!isValidPackageName(name)) {
-      onError(
-          PackageConfigArgumentError(name, "name", "Not a valid package name"));
+    var invalidIndex = checkPackageName(name);
+    if (invalidIndex >= 0) {
+      onError(PackageConfigFormatException(
+          "Not a valid package name", name, invalidIndex));
+      fatalError = true;
     }
     if (root.isScheme("package")) {
-      onError(PackageConfigArgumentError("$root", "root",
-          "Must not be a package URI"));
+      onError(PackageConfigArgumentError(
+          "$root", "root", "Must not be a package URI"));
       fatalError = true;
     } else if (!isAbsoluteDirectoryUri(root)) {
       onError(PackageConfigArgumentError(
@@ -219,11 +221,16 @@ class SimplePackage implements Package {
         packageUriRoot = root;
       }
     }
-    if (languageVersion != null &&
-        checkValidVersionNumber(languageVersion) >= 0) {
-      onError(PackageConfigArgumentError(languageVersion, "languageVersion",
-          "Invalid language version format"));
-      languageVersion = null;
+    if (languageVersion != null) {
+      var invalidIndex = checkValidVersionNumber(languageVersion);
+      if (invalidIndex >= 0) {
+        onError(PackageConfigFormatException(
+          "Invalid language version format for package $name",
+          languageVersion,
+          invalidIndex,
+        ));
+        languageVersion = null;
+      }
     }
     if (fatalError) return null;
     return SimplePackage._(

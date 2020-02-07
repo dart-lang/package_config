@@ -35,7 +35,7 @@ PackageConfig parse(
   List<Package> packages = [];
   Set<String> packageNames = {};
   while (index < source.length) {
-    bool isComment = false;
+    bool ignoreLine = false;
     int start = index;
     int separatorIndex = -1;
     int end = source.length;
@@ -46,10 +46,12 @@ PackageConfig parse(
     if (char == $colon) {
       onError(PackageConfigFormatException(
           "Missing package name", source, index - 1));
-      isComment = true;
+      ignoreLine = true; // Ignore if package name is invalid.
     } else {
-      isComment = char == $hash;
+      ignoreLine = char == $hash; // Ignore if comment.
     }
+    int queryStart = -1;
+    int fragmentStart = -1;
     while (index < source.length) {
       char = source[index++];
       if (char == $colon && separatorIndex < 0) {
@@ -57,35 +59,46 @@ PackageConfig parse(
       } else if (char == $cr || char == $lf) {
         end = index - 1;
         break;
+      } else if (char == $question && queryStart < 0 && fragmentStart < 0) {
+        queryStart = index - 1;
+      } else if (char == $hash && fragmentStart < 0) {
+        fragmentStart = index - 1;
       }
     }
-    if (isComment) continue;
+    if (ignoreLine) continue;
     if (separatorIndex < 0) {
       onError(
           PackageConfigFormatException("No ':' on line", source, index - 1));
       continue;
     }
     var packageName = String.fromCharCodes(source, start, separatorIndex);
-    if (!isValidPackageName(packageName)) {
+    int invalidIndex = checkPackageName(packageName);
+    if (invalidIndex >= 0) {
       onError(PackageConfigFormatException(
-          "Not a valid package name", packageName, 0));
+          "Not a valid package name", source, start + invalidIndex));
+      continue;
+    }
+    if (queryStart >= 0) {
+      onError(PackageConfigFormatException(
+          "Location URI must not have query", source, queryStart));
+      end = queryStart;
+    } else if (fragmentStart >= 0) {
+      onError(PackageConfigFormatException(
+          "Location URI must not have fragment", source, fragmentStart));
+      end = fragmentStart;
     }
     var packageValue = String.fromCharCodes(source, separatorIndex + 1, end);
     Uri packageLocation;
     try {
       packageLocation = baseLocation.resolve(packageValue);
-    } on FormatException catch(e) {
-      onError(e);
+    } on FormatException catch (e) {
+      onError(PackageConfigFormatException.from(e));
       continue;
     }
     if (packageLocation.isScheme("package")) {
       onError(PackageConfigFormatException(
           "Package URI as location for package", source, separatorIndex + 1));
       continue;
-    }
-    if (packageLocation.hasQuery || packageLocation.hasFragment) {
-      onError(PackageConfigFormatException(
-          "Location URI must not have query or fragment", source, start));
     }
     if (!packageLocation.path.endsWith('/')) {
       packageLocation =

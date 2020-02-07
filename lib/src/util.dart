@@ -359,5 +359,8 @@ const int $dot = 0x2e;
 /// Character `:`.
 const int $colon = 0x3a;
 
+/// Character `?`.
+const int $question = 0x3f;
+
 /// Character `{`.
 const int $lbrace = 0x7b;
