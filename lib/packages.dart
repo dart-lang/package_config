@@ -16,6 +16,7 @@ import "src/packages_impl.dart";
 /// in which case [packages] and [asMap] will throw if used.
 /// One such case is if the packages are resolved relative to a
 /// `packages/` directory available over HTTP.
+@Deprecated("Use the package_config.json based API")
 abstract class Packages {
   /// A [Packages] resolver containing no packages.
   ///

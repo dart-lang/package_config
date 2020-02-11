@@ -4,6 +4,7 @@
 
 /// Implementations of [Packages] that can only be used in server based
 /// applications.
+@Deprecated("Use the package_config.json based API")
 library package_config.packages_io_impl;
 
 import "dart:collection" show UnmodifiableMapView;

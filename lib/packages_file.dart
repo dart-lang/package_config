@@ -2,11 +2,12 @@
 // for details. All rights reserved. Use of this source code is governed by a
 // BSD-style license that can be found in the LICENSE file.
 
+@Deprecated("Use the package_config.json based API")
 library package_config.packages_file;
 
 import "package:charcode/ascii.dart";
 
-import "src/util.dart" show isValidPackageName;
+import "src/legacy_util.dart" show isValidPackageName;
 
 /// Parses a `.packages` file into a map from package name to base URI.
 ///

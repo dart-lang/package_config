@@ -10,6 +10,7 @@
 /// but more efficiently and with some heuristics for directories that
 /// wouldn't otherwise have a package resolution strategy, or that are
 /// determined to be "package directories" themselves.
+@Deprecated("Use the package_config.json based API")
 library package_config.discovery_analysis;
 
 import "dart:collection" show HashMap;

@@ -3,6 +3,7 @@
 // BSD-style license that can be found in the LICENSE file.
 
 /// Utility methods used by more than one library in the package.
+@Deprecated("Use the package_config.json based API")
 library package_config.util;
 
 import "package:charcode/ascii.dart";
