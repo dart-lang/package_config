@@ -1,6 +1,28 @@
+## 3.0.0
+
+- Make the language version be represented as a `LanguageVersion` class
+  instead of a string.
+- Made error handling interceptable. Passing an `onError` handler
+  makes the parsers attempt to do a best-effort error correction after
+  detecting an error.
+- Do not require root URIs to have paths starting with `/`. That
+  only makes sense for `file` or `http`, and they enforce it anyway.
+- Fixed bug in language version validation not accepting the digit `9`.
+
+## 2.0.0
+
+- Based on new JSON file format with more content.
+
+## 1.9.0
+
+- A merge of version 3.0.0 back to the 1.x branch.
+  This version includes all the functionality of version 3.0.0,
+  as well as the, now deprecated, version 1 functionality.
+
 ## 1.2.0
- - Added support for writing default-package entries.
- - Fixed bug when writing `Uri`s containing a fragment.
+
+- Added support for writing default-package entries.
+- Fixed bug when writing `Uri`s containing a fragment.
 
 ## 1.1.0
 

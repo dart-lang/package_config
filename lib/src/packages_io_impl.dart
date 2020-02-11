@@ -10,9 +10,9 @@ library package_config.packages_io_impl;
 import "dart:collection" show UnmodifiableMapView;
 import "dart:io" show Directory;
 
-import "package:path/path.dart" as path;
-
 import "packages_impl.dart";
+
+import "util.dart";
 
 /// A [Packages] implementation based on a local directory.
 class FilePackagesDirectoryPackages extends PackagesBase {
@@ -23,7 +23,7 @@ class FilePackagesDirectoryPackages extends PackagesBase {
 
   Uri getBase(String packageName) {
     return _packageToBaseUriMap.putIfAbsent(packageName, () {
-      return new Uri.file(path.join(_packageDir.path, packageName, '.'));
+      return new Uri.file(pathJoin(_packageDir.path, packageName, '.'));
     });
   }
 
@@ -31,7 +31,7 @@ class FilePackagesDirectoryPackages extends PackagesBase {
     return _packageDir
         .listSync()
         .where((e) => e is Directory)
-        .map((e) => path.basename(e.path));
+        .map((e) => fileName(e.path));
   }
 
   Iterable<String> get packages => _listPackageNames();

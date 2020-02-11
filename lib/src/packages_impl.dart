@@ -11,14 +11,14 @@ library package_config.packages_impl;
 import "dart:collection" show UnmodifiableMapView;
 
 import "../packages.dart";
-import "legacy_util.dart" show checkValidPackageUri;
+import "util.dart" show checkValidPackageUri;
 
 /// A [Packages] null-object.
 class NoPackages implements Packages {
   const NoPackages();
 
   Uri resolve(Uri packageUri, {Uri notFound(Uri packageUri)}) {
-    String packageName = checkValidPackageUri(packageUri);
+    String packageName = checkValidPackageUri(packageUri, "packageUri");
     if (notFound != null) return notFound(packageUri);
     throw new ArgumentError.value(
         packageUri, "packageUri", 'No package named "$packageName"');
@@ -42,7 +42,7 @@ class NoPackages implements Packages {
 abstract class PackagesBase implements Packages {
   Uri resolve(Uri packageUri, {Uri notFound(Uri packageUri)}) {
     packageUri = packageUri.normalizePath();
-    String packageName = checkValidPackageUri(packageUri);
+    String packageName = checkValidPackageUri(packageUri, "packageUri");
     Uri packageBase = getBase(packageName);
     if (packageBase == null) {
       if (notFound != null) return notFound(packageUri);

@@ -7,7 +7,7 @@ library package_config.packages_file;
 
 import "package:charcode/ascii.dart";
 
-import "src/legacy_util.dart" show isValidPackageName;
+import "src/util.dart" show isValidPackageName;
 
 /// Parses a `.packages` file into a map from package name to base URI.
 ///
