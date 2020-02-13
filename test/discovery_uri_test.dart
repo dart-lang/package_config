@@ -4,10 +4,8 @@
 
 library package_config.discovery_test;
 
-import 'dart:io';
-
 import "package:test/test.dart";
-import "package:package_config/package_config.dart";
+import "package:package_config/package_config_discovery.dart";
 
 import "src/util.dart";
 

@@ -8,6 +8,8 @@ import "util.dart";
 
 export "package_config.dart";
 
+// Implementations of the main data types exposed by the API of this package.
+
 class SimplePackageConfig implements PackageConfig {
   final int version;
   final Map<String, Package> _packages;

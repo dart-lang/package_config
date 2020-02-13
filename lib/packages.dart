@@ -2,6 +2,7 @@
 // for details. All rights reserved. Use of this source code is governed by a
 // BSD-style license that can be found in the LICENSE file.
 
+@Deprecated("Use the package_config.json based API")
 library package_config.packages;
 
 import "src/packages_impl.dart";

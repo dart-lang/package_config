@@ -2,11 +2,11 @@
 // for details. All rights reserved. Use of this source code is governed by a
 // BSD-style license that can be found in the LICENSE file.
 
+// Parsing and serialization of package configurations.
+
 import "dart:convert";
-import "dart:io";
 import "dart:typed_data";
 
-import "discovery.dart" show packageConfigJsonPath;
 import "errors.dart";
 import "package_config_impl.dart";
 import "packages_file.dart" as packages_file;
@@ -30,125 +30,6 @@ const String _generatedKey = "generated";
 const String _generatorKey = "generator";
 const String _generatorVersionKey = "generatorVersion";
 
-/// Reads a package configuration file.
-///
-/// Detects whether the [file] is a version one `.packages` file or
-/// a version two `package_config.json` file.
-///
-/// If the [file] is a `.packages` file and [preferNewest] is true,
-/// first checks whether there is an adjacent `.dart_tool/package_config.json`
-/// file, and if so, reads that instead.
-/// If [preferNewset] is false, the specified file is loaded even if it is
-/// a `.packages` file and there is an available `package_config.json` file.
-///
-/// The file must exist and be a normal file.
-Future<PackageConfig> readAnyConfigFile(
-    File file, bool preferNewest, void onError(Object error)) async {
-  Uint8List bytes;
-  try {
-    bytes = await file.readAsBytes();
-  } catch (e) {
-    onError(e);
-    return const SimplePackageConfig.empty();
-  }
-  int firstChar = firstNonWhitespaceChar(bytes);
-  if (firstChar != $lbrace) {
-    // Definitely not a JSON object, probably a .packages.
-    if (preferNewest) {
-      var alternateFile = File(
-          pathJoin(dirName(file.path), ".dart_tool", "package_config.json"));
-      if (alternateFile.existsSync()) {
-        Uint8List /*?*/ bytes;
-        try {
-          bytes = await alternateFile.readAsBytes();
-        } catch (e) {
-          onError(e);
-          return const SimplePackageConfig.empty();
-        }
-        if (bytes != null) {
-          return parsePackageConfigBytes(bytes, alternateFile.uri, onError);
-        }
-      }
-    }
-    return packages_file.parse(bytes, file.uri, onError);
-  }
-  return parsePackageConfigBytes(bytes, file.uri, onError);
-}
-
-/// Like [readAnyConfigFile] but uses a URI and an optional loader.
-Future<PackageConfig> readAnyConfigFileUri(
-    Uri file,
-    Future<Uint8List /*?*/ > loader(Uri uri) /*?*/,
-    void onError(Object error),
-    bool preferNewest) async {
-  if (file.isScheme("package")) {
-    throw PackageConfigArgumentError(
-        file, "file", "Must not be a package: URI");
-  }
-  if (loader == null) {
-    if (file.isScheme("file")) {
-      return readAnyConfigFile(File.fromUri(file), preferNewest, onError);
-    }
-    loader = defaultLoader;
-  }
-  Uint8List bytes;
-  try {
-    bytes = await loader(file);
-  } catch (e) {
-    onError(e);
-    return const SimplePackageConfig.empty();
-  }
-  if (bytes == null) {
-    onError(PackageConfigArgumentError(
-        file.toString(), "file", "File cannot be read"));
-    return const SimplePackageConfig.empty();
-  }
-  int firstChar = firstNonWhitespaceChar(bytes);
-  if (firstChar != $lbrace) {
-    // Definitely not a JSON object, probably a .packages.
-    if (preferNewest) {
-      // Check if there is a package_config.json file.
-      var alternateFile = file.resolveUri(packageConfigJsonPath);
-      Uint8List alternateBytes;
-      try {
-        alternateBytes = await loader(alternateFile);
-      } catch (e) {
-        onError(e);
-        return const SimplePackageConfig.empty();
-      }
-      if (alternateBytes != null) {
-        return parsePackageConfigBytes(alternateBytes, alternateFile, onError);
-      }
-    }
-    return packages_file.parse(bytes, file, onError);
-  }
-  return parsePackageConfigBytes(bytes, file, onError);
-}
-
-Future<PackageConfig> readPackageConfigJsonFile(
-    File file, void onError(Object error)) async {
-  Uint8List bytes;
-  try {
-    bytes = await file.readAsBytes();
-  } catch (error) {
-    onError(error);
-    return const SimplePackageConfig.empty();
-  }
-  return parsePackageConfigBytes(bytes, file.uri, onError);
-}
-
-Future<PackageConfig> readDotPackagesFile(
-    File file, void onError(Object error)) async {
-  Uint8List bytes;
-  try {
-    bytes = await file.readAsBytes();
-  } catch (error) {
-    onError(error);
-    return const SimplePackageConfig.empty();
-  }
-  return packages_file.parse(bytes, file.uri, onError);
-}
-
 final _jsonUtf8Decoder = json.fuse(utf8).decoder;
 
 PackageConfig parsePackageConfigBytes(
@@ -157,6 +38,18 @@ PackageConfig parsePackageConfigBytes(
   var jsonObject;
   try {
     jsonObject = _jsonUtf8Decoder.convert(bytes);
+  } on FormatException catch (e) {
+    onError(PackageConfigFormatException(e.message, e.source, e.offset));
+    return const SimplePackageConfig.empty();
+  }
+  return parsePackageConfigJson(jsonObject, file, onError);
+}
+
+PackageConfig parsePackageConfigString(
+    String source, Uri file, void onError(Object error)) {
+  var jsonObject;
+  try {
+    jsonObject = jsonDecode(source);
   } on FormatException catch (e) {
     onError(PackageConfigFormatException(e.message, e.source, e.offset));
     return const SimplePackageConfig.empty();
@@ -326,12 +219,11 @@ PackageConfig parsePackageConfigJson(
   });
 }
 
-Future<void> writePackageConfigJson(
-    PackageConfig config, Directory targetDirectory) async {
+final _jsonUtf8Encoder = JsonUtf8Encoder("  ");
+
+void writePackageConfigJson(
+    PackageConfig config, Uri baseUri, Sink<List<int>> output) {
   // Write .dart_tool/package_config.json first.
-  var file =
-      File(pathJoin(targetDirectory.path, ".dart_tool", "package_config.json"));
-  var baseUri = file.uri;
   var extraData = config.extraData;
   var data = <String, dynamic>{
     _configVersionKey: PackageConfig.maxVersion,
@@ -348,9 +240,13 @@ Future<void> writePackageConfigJson(
           ...?_extractExtraData(package.extraData, _packageNames),
         }
     ],
-    ...?_extractExtraData(config.extraData, _topNames),
+    ...?_extractExtraData(extraData, _topNames),
   };
+  output.add(_jsonUtf8Encoder.convert(data) as Uint8List);
+}
 
+void writeDotPackages(PackageConfig config, Uri baseUri, StringSink output) {
+  var extraData = config.extraData;
   // Write .packages too.
   String /*?*/ comment;
   if (extraData != null) {
@@ -363,15 +259,8 @@ Future<void> writePackageConfigJson(
           "${generated != null ? " on $generated" : ""}.";
     }
   }
-  file = File(pathJoin(targetDirectory.path, ".packages"));
-  baseUri = file.uri;
-  var buffer = StringBuffer();
-  packages_file.write(buffer, config, baseUri: baseUri, comment: comment);
-
-  await Future.wait([
-    file.writeAsString(JsonEncoder.withIndent("  ").convert(data)),
-    file.writeAsString(buffer.toString()),
-  ]);
+  packages_file.write(output, config, baseUri: baseUri, comment: comment);
+  return;
 }
 
 /// If "extraData" is a JSON map, then return it, otherwise return null.

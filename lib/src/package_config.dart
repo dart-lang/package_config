@@ -2,8 +2,11 @@
 // for details. All rights reserved. Use of this source code is governed by a
 // BSD-style license that can be found in the LICENSE file.
 
+import 'dart:typed_data';
+
 import 'errors.dart';
 import "package_config_impl.dart";
+import 'package_config_json.dart';
 
 /// A package configuration.
 ///
@@ -36,6 +39,60 @@ abstract class PackageConfig {
   /// The version of the resulting configuration is always [maxVersion].
   factory PackageConfig(Iterable<Package> packages, {dynamic extraData}) =>
       SimplePackageConfig(maxVersion, packages, extraData);
+
+  /// Parses a package configuration file.
+  ///
+  /// The [bytes] must be an UTF-8 encoded JSON object
+  /// containing a valid package configuration.
+  ///
+  /// The [baseUri] is used as the base for resolving relative
+  /// URI references in the configuration file. If the configuration
+  /// has been read from a file, the [baseUri] can be the URI of that
+  /// file, or of the directory it occurs in.
+  ///
+  /// If [onError] is provided, errors found during parsing or building
+  /// the configuration are reported by calling [onError] instead of
+  /// throwing, and parser makes a *best effort* attempt to continue
+  /// despite the error. The input must still be valid JSON.
+  /// The result may be a [PackageConfig.empty] if there is no way to
+  /// extract useful information from the bytes.
+  static PackageConfig parseBytes(Uint8List bytes, Uri baseUri,
+          {void onError(Object error)}) =>
+      parsePackageConfigBytes(bytes, baseUri, onError);
+
+  /// Parses a package configuration file.
+  ///
+  /// The [configuration] must be a JSON object
+  /// containing a valid package configuration.
+  ///
+  /// The [baseUri] is used as the base for resolving relative
+  /// URI references in the configuration file. If the configuration
+  /// has been read from a file, the [baseUri] can be the URI of that
+  /// file, or of the directory it occurs in.
+  ///
+  /// If [onError] is provided, errors found during parsing or building
+  /// the configuration are reported by calling [onError] instead of
+  /// throwing, and parser makes a *best effort* attempt to continue
+  /// despite the error. The input must still be valid JSON.
+  /// The result may be a [PackageConfig.empty] if there is no way to
+  /// extract useful information from the bytes.
+  static PackageConfig parseString(String configuration, Uri baseUri,
+          {void onError(Object error)}) =>
+      parsePackageConfigString(configuration, baseUri, onError);
+
+  /// Writes a configuration file for this configuration on [output].
+  ///
+  /// If [baseUri] is provided, URI references in the generated file
+  /// will be made relative to [baseUri] where possible.
+  static void writeBytes(PackageConfig configuration, Sink<Uint8List> output,
+      [Uri baseUri]) {}
+
+  /// Writes a configuration JSON text for this configuration on [output].
+  ///
+  /// If [baseUri] is provided, URI references in the generated file
+  /// will be made relative to [baseUri] where possible.
+  static void writeString(PackageConfig configuration, StringSink output,
+      [Uri baseUri]) {}
 
   /// The configuration version number.
   ///
