@@ -31,8 +31,8 @@ bool isValidPackageName(String string) {
 /// or `string.length` if the string contains no non-'.' character.
 int checkPackageName(String string) {
   // Becomes non-zero if any non-'.' character is encountered.
-  int nonDot = 0;
-  for (int i = 0; i < string.length; i++) {
+  var nonDot = 0;
+  for (var i = 0; i < string.length; i++) {
     var c = string.codeUnitAt(i);
     if (c > 0x7f || _validPackageNameCharacters.codeUnitAt(c) <= $space) {
       return i;
@@ -74,13 +74,13 @@ String checkValidPackageUri(Uri packageUri, String name) {
     throw PackageConfigArgumentError(
         packageUri, name, "Package URIs must not start with a '/'");
   }
-  int firstSlash = packageUri.path.indexOf('/');
+  var firstSlash = packageUri.path.indexOf('/');
   if (firstSlash == -1) {
     throw PackageConfigArgumentError(packageUri, name,
         "Package URIs must start with the package name followed by a '/'");
   }
-  String packageName = packageUri.path.substring(0, firstSlash);
-  int badIndex = checkPackageName(packageName);
+  var packageName = packageUri.path.substring(0, firstSlash);
+  var badIndex = checkPackageName(packageName);
   if (badIndex >= 0) {
     if (packageName.isEmpty) {
       throw PackageConfigArgumentError(
@@ -91,7 +91,7 @@ String checkValidPackageUri(Uri packageUri, String name) {
           "Package names must contain at least one non-'.' character");
     }
     assert(badIndex < packageName.length);
-    int badCharCode = packageName.codeUnitAt(badIndex);
+    var badCharCode = packageName.codeUnitAt(badIndex);
     var badChar = "U+" + badCharCode.toRadixString(16).padLeft(4, '0');
     if (badCharCode >= 0x20 && badCharCode <= 0x7e) {
       // Printable character.
@@ -131,7 +131,7 @@ bool isUriPrefix(Uri prefix, Uri path) {
 ///
 /// Used to heuristically detect whether a file is a JSON file or an .ini file.
 int firstNonWhitespaceChar(List<int> bytes) {
-  for (int i = 0; i < bytes.length; i++) {
+  for (var i = 0; i < bytes.length; i++) {
     var char = bytes[i];
     if (char != 0x20 && char != 0x09 && char != 0x0a && char != 0x0d) {
       return char;
@@ -185,12 +185,12 @@ Uri relativizeUri(Uri uri, Uri baseUri) {
   }
 
   baseUri = baseUri.normalizePath();
-  List<String> base = [...baseUri.pathSegments];
+  var base = [...baseUri.pathSegments];
   if (base.isNotEmpty) base.removeLast();
   uri = uri.normalizePath();
-  List<String> target = [...uri.pathSegments];
+  var target = [...uri.pathSegments];
   if (target.isNotEmpty && target.last.isEmpty) target.removeLast();
-  int index = 0;
+  var index = 0;
   while (index < base.length && index < target.length) {
     if (base[index] != target[index]) {
       break;
@@ -204,7 +204,7 @@ Uri relativizeUri(Uri uri, Uri baseUri) {
     return Uri(path: target.skip(index).join('/'));
   } else if (index > 0) {
     var buffer = StringBuffer();
-    for (int n = base.length - index; n > 0; --n) {
+    for (var n = base.length - index; n > 0; --n) {
       buffer.write("../");
     }
     buffer.writeAll(target.skip(index), "/");
@@ -231,14 +231,14 @@ Future<Uint8List> defaultLoader(Uri uri) async {
 
 Future<Uint8List /*?*/ > _httpGet(Uri uri) async {
   assert(uri.isScheme("http") || uri.isScheme("https"));
-  HttpClient client = new HttpClient();
-  HttpClientRequest request = await client.getUrl(uri);
-  HttpClientResponse response = await request.close();
+  var client = HttpClient();
+  var request = await client.getUrl(uri);
+  var response = await request.close();
   if (response.statusCode != HttpStatus.ok) {
     return null;
   }
-  List<List<int>> splitContent = await response.toList();
-  int totalLength = 0;
+  var splitContent = await response.toList();
+  var totalLength = 0;
   if (splitContent.length == 1) {
     var part = splitContent[0];
     if (part is Uint8List) {
@@ -248,8 +248,8 @@ Future<Uint8List /*?*/ > _httpGet(Uri uri) async {
   for (var list in splitContent) {
     totalLength += list.length;
   }
-  Uint8List result = new Uint8List(totalLength);
-  int offset = 0;
+  var result = new Uint8List(totalLength);
+  var offset = 0;
   for (Uint8List contentPart in splitContent) {
     result.setRange(offset, offset + contentPart.length, contentPart);
     offset += contentPart.length;

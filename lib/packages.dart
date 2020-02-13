@@ -23,7 +23,7 @@ abstract class Packages {
   ///
   /// This constant object is returned by [find] above if no
   /// package resolution strategy is found.
-  static const Packages noPackages = const NoPackages();
+  static const Packages noPackages = NoPackages();
 
   /// Resolve a package URI into a non-package URI.
   ///

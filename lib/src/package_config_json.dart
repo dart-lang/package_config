@@ -114,9 +114,9 @@ PackageConfig parsePackageConfigJson(
     String /*?*/ packageUri;
     String /*?*/ languageVersion;
     Map<String, dynamic> /*?*/ extraData;
-    bool hasName = false;
-    bool hasRoot = false;
-    bool hasVersion = false;
+    var hasName = false;
+    var hasRoot = false;
+    var hasVersion = false;
     entry.forEach((key, value) {
       switch (key) {
         case _nameKey:
@@ -146,9 +146,9 @@ PackageConfig parsePackageConfigJson(
       onError(PackageConfigFormatException("Missing rootUri entry", entry));
     }
     if (name == null || rootUri == null) return null;
-    Uri root = baseLocation.resolve(rootUri);
+    var root = baseLocation.resolve(rootUri);
     if (!root.path.endsWith("/")) root = root.replace(path: root.path + "/");
-    Uri packageRoot = root;
+    var packageRoot = root;
     if (packageUri != null) packageRoot = root.resolve(packageUri);
     if (!packageRoot.path.endsWith("/")) {
       packageRoot = packageRoot.replace(path: packageRoot.path + "/");
@@ -174,7 +174,7 @@ PackageConfig parsePackageConfigJson(
 
   var map = checkType<Map<String, dynamic>>(json, "value");
   if (map == null) return const SimplePackageConfig.empty();
-  Map<String, dynamic> /*?*/ extraData = null;
+  Map<String, dynamic> /*?*/ extraData;
   List<Package> /*?*/ packageList;
   int /*?*/ configVersion;
   map.forEach((key, value) {

@@ -31,13 +31,11 @@ import "src/packages_io_impl.dart";
 Future<Packages> loadPackagesFile(Uri packagesFile,
     {Future<List<int>> loader(Uri uri)}) async {
   Packages parseBytes(List<int> bytes) {
-    Map<String, Uri> packageMap = pkgfile.parse(bytes, packagesFile);
-    return new MapPackages(packageMap);
+    return MapPackages(pkgfile.parse(bytes, packagesFile));
   }
 
   if (packagesFile.scheme == "file") {
-    File file = new File.fromUri(packagesFile);
-    return parseBytes(await file.readAsBytes());
+    return parseBytes(await File.fromUri(packagesFile).readAsBytes());
   }
   if (loader == null) {
     return parseBytes(await _httpGet(packagesFile));
@@ -55,13 +53,12 @@ Future<Packages> loadPackagesFile(Uri packagesFile,
 /// for example one specified using a `--package-root` comand-line parameter.
 Packages getPackagesDirectory(Uri packagesDir) {
   if (packagesDir.scheme == "file") {
-    Directory directory = new Directory.fromUri(packagesDir);
-    return new FilePackagesDirectoryPackages(directory);
+    return FilePackagesDirectoryPackages(Directory.fromUri(packagesDir));
   }
   if (!packagesDir.path.endsWith('/')) {
     packagesDir = packagesDir.replace(path: packagesDir.path + '/');
   }
-  return new NonFilePackagesDirectoryPackages(packagesDir);
+  return NonFilePackagesDirectoryPackages(packagesDir);
 }
 
 /// Discover the package configuration for a Dart script.
@@ -95,13 +92,13 @@ Packages getPackagesDirectory(Uri packagesDir) {
 Future<Packages> findPackages(Uri baseUri,
     {Future<List<int>> loader(Uri unsupportedUri)}) {
   if (baseUri.scheme == "file") {
-    return new Future<Packages>.sync(() => findPackagesFromFile(baseUri));
+    return Future<Packages>.sync(() => findPackagesFromFile(baseUri));
   } else if (loader != null) {
     return findPackagesFromNonFile(baseUri, loader: loader);
   } else if (baseUri.scheme == "http" || baseUri.scheme == "https") {
     return findPackagesFromNonFile(baseUri, loader: _httpGet);
   } else {
-    return new Future<Packages>.value(Packages.noPackages);
+    return Future<Packages>.value(Packages.noPackages);
   }
 }
 
@@ -115,15 +112,15 @@ Future<Packages> findPackages(Uri baseUri,
 /// Returns a [File] object of a `.packages` file if one is found, or a
 /// [Directory] object for the `packages/` directory if that is found.
 FileSystemEntity _findPackagesFile(String workingDirectory) {
-  var dir = new Directory(workingDirectory);
+  var dir = Directory(workingDirectory);
   if (!dir.isAbsolute) dir = dir.absolute;
   if (!dir.existsSync()) {
-    throw new ArgumentError.value(
+    throw ArgumentError.value(
         workingDirectory, "workingDirectory", "Directory does not exist.");
   }
   File checkForConfigFile(Directory directory) {
     assert(directory.isAbsolute);
-    var file = new File(path.join(directory.path, ".packages"));
+    var file = File(path.join(directory.path, ".packages"));
     if (file.existsSync()) return file;
     return null;
   }
@@ -132,7 +129,7 @@ FileSystemEntity _findPackagesFile(String workingDirectory) {
   var packagesCfgFile = checkForConfigFile(dir);
   if (packagesCfgFile != null) return packagesCfgFile;
   // Check for $cwd/packages/
-  var packagesDir = new Directory(path.join(dir.path, "packages"));
+  var packagesDir = Directory(path.join(dir.path, "packages"));
   if (packagesDir.existsSync()) return packagesDir;
   // Check for cwd(/..)+/.packages
   var parentDir = dir.parent;
@@ -157,21 +154,21 @@ FileSystemEntity _findPackagesFile(String workingDirectory) {
 /// file, and stops if it finds it.
 /// Otherwise it gives up and returns [Packages.noPackages].
 Packages findPackagesFromFile(Uri fileBaseUri) {
-  Uri baseDirectoryUri = fileBaseUri;
+  var baseDirectoryUri = fileBaseUri;
   if (!fileBaseUri.path.endsWith('/')) {
     baseDirectoryUri = baseDirectoryUri.resolve(".");
   }
-  String baseDirectoryPath = baseDirectoryUri.toFilePath();
-  FileSystemEntity location = _findPackagesFile(baseDirectoryPath);
+  var baseDirectoryPath = baseDirectoryUri.toFilePath();
+  var location = _findPackagesFile(baseDirectoryPath);
   if (location == null) return Packages.noPackages;
   if (location is File) {
-    List<int> fileBytes = location.readAsBytesSync();
-    Map<String, Uri> map =
-        pkgfile.parse(fileBytes, new Uri.file(location.path));
-    return new MapPackages(map);
+    var fileBytes = location.readAsBytesSync();
+    var map =
+        pkgfile.parse(fileBytes, Uri.file(location.path));
+    return MapPackages(map);
   }
   assert(location is Directory);
-  return new FilePackagesDirectoryPackages(location);
+  return FilePackagesDirectoryPackages(location);
 }
 
 /// Finds a package resolution strategy for a Dart script.
@@ -193,37 +190,37 @@ Packages findPackagesFromFile(Uri fileBaseUri) {
 /// UTF-8 encoded.
 Future<Packages> findPackagesFromNonFile(Uri nonFileUri,
     {Future<List<int>> loader(Uri name)}) async {
-  if (loader == null) loader = _httpGet;
-  Uri packagesFileUri = nonFileUri.resolve(".packages");
+  loader ??= _httpGet;
+  var packagesFileUri = nonFileUri.resolve(".packages");
 
   try {
-    List<int> fileBytes = await loader(packagesFileUri);
-    Map<String, Uri> map = pkgfile.parse(fileBytes, packagesFileUri);
-    return new MapPackages(map);
+    var fileBytes = await loader(packagesFileUri);
+    var map = pkgfile.parse(fileBytes, packagesFileUri);
+    return MapPackages(map);
   } catch (_) {
     // Didn't manage to load ".packages". Assume a "packages/" directory.
-    Uri packagesDirectoryUri = nonFileUri.resolve("packages/");
-    return new NonFilePackagesDirectoryPackages(packagesDirectoryUri);
+    var packagesDirectoryUri = nonFileUri.resolve("packages/");
+    return NonFilePackagesDirectoryPackages(packagesDirectoryUri);
   }
 }
 
 /// Fetches a file over http.
 Future<List<int>> _httpGet(Uri uri) async {
-  HttpClient client = new HttpClient();
-  HttpClientRequest request = await client.getUrl(uri);
-  HttpClientResponse response = await request.close();
+  var client = HttpClient();
+  var request = await client.getUrl(uri);
+  var response = await request.close();
   if (response.statusCode != HttpStatus.ok) {
-    throw new HttpException('${response.statusCode} ${response.reasonPhrase}',
+    throw HttpException('${response.statusCode} ${response.reasonPhrase}',
         uri: uri);
   }
-  List<List<int>> splitContent = await response.toList();
-  int totalLength = 0;
+  var splitContent = await response.toList();
+  var totalLength = 0;
   for (var list in splitContent) {
     totalLength += list.length;
   }
-  Uint8List result = new Uint8List(totalLength);
-  int offset = 0;
-  for (List<int> contentPart in splitContent) {
+  var result = Uint8List(totalLength);
+  var offset = 0;
+  for (var contentPart in splitContent) {
     result.setRange(offset, offset + contentPart.length, contentPart);
     offset += contentPart.length;
   }

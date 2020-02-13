@@ -2,19 +2,20 @@
 // for details. All rights reserved. Use of this source code is governed by a
 // BSD-style license that can be found in the LICENSE file.
 
+@deprecated
 library package_config.parse_write_test;
 
 import "dart:convert" show utf8;
 import "package:package_config/packages_file.dart";
 import "package:test/test.dart";
 
-main() {
-  testBase(baseDirString) {
+void main() {
+  void testBase(baseDirString) {
     var baseDir = Uri.parse(baseDirString);
     group("${baseDir.scheme} base", () {
-      Uri packagesFile = baseDir.resolve(".packages");
+      var packagesFile = baseDir.resolve(".packages");
 
-      roundTripTest(String name, Map<String, Uri> map) {
+      void roundTripTest(String name, Map<String, Uri> map) {
         group(name, () {
           test("write with no baseUri", () {
             var content = writeToString(map).codeUnits;
@@ -123,7 +124,7 @@ String writeToString(
   String comment,
   bool allowDefaultPackage = false,
 }) {
-  var buffer = new StringBuffer();
+  var buffer = StringBuffer();
   write(buffer, map,
       baseUri: baseUri,
       comment: comment,

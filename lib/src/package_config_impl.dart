@@ -128,7 +128,7 @@ class SimplePackageConfig implements PackageConfig {
   Package /*?*/ packageOf(Uri file) => _packageTree.packageOf(file);
 
   Uri /*?*/ resolve(Uri packageUri) {
-    String packageName = checkValidPackageUri(packageUri, "packageUri");
+    var packageName = checkValidPackageUri(packageUri, "packageUri");
     return _packages[packageName]?.packageUriRoot?.resolveUri(
         Uri(path: packageUri.path.substring(packageName.length + 1)));
   }
@@ -189,7 +189,7 @@ class SimplePackage implements Package {
       LanguageVersion /*?*/ languageVersion,
       dynamic extraData,
       void onError(Object error)) {
-    bool fatalError = false;
+    var fatalError = false;
     var invalidIndex = checkPackageName(name);
     if (invalidIndex >= 0) {
       onError(PackageConfigFormatException(
@@ -307,7 +307,7 @@ LanguageVersion parseLanguageVersion(
 
 abstract class _SimpleLanguageVersionBase implements LanguageVersion {
   int compareTo(LanguageVersion other) {
-    int result = major.compareTo(other.major);
+    var result = major.compareTo(other.major);
     if (result != 0) return result;
     return minor.compareTo(other.minor);
   }
@@ -456,7 +456,7 @@ class EmptyPackageTree implements PackageTree {
 /// already have been matched.
 bool _beginsWith(int start, String parentPath, String longerPath) {
   if (longerPath.length < parentPath.length) return false;
-  for (int i = start; i < parentPath.length; i++) {
+  for (var i = start; i < parentPath.length; i++) {
     if (longerPath.codeUnitAt(i) != parentPath.codeUnitAt(i)) return false;
   }
   return true;

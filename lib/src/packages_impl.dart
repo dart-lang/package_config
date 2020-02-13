@@ -18,13 +18,13 @@ class NoPackages implements Packages {
   const NoPackages();
 
   Uri resolve(Uri packageUri, {Uri notFound(Uri packageUri)}) {
-    String packageName = checkValidPackageUri(packageUri, "packageUri");
+    var packageName = checkValidPackageUri(packageUri, "packageUri");
     if (notFound != null) return notFound(packageUri);
-    throw new ArgumentError.value(
+    throw ArgumentError.value(
         packageUri, "packageUri", 'No package named "$packageName"');
   }
 
-  Iterable<String> get packages => new Iterable<String>.empty();
+  Iterable<String> get packages => Iterable<String>.empty();
 
   Map<String, Uri> asMap() => const <String, Uri>{};
 
@@ -42,14 +42,14 @@ class NoPackages implements Packages {
 abstract class PackagesBase implements Packages {
   Uri resolve(Uri packageUri, {Uri notFound(Uri packageUri)}) {
     packageUri = packageUri.normalizePath();
-    String packageName = checkValidPackageUri(packageUri, "packageUri");
-    Uri packageBase = getBase(packageName);
+    var packageName = checkValidPackageUri(packageUri, "packageUri");
+    var packageBase = getBase(packageName);
     if (packageBase == null) {
       if (notFound != null) return notFound(packageUri);
-      throw new ArgumentError.value(
+      throw ArgumentError.value(
           packageUri, "packageUri", 'No package named "$packageName"');
     }
-    String packagePath = packageUri.path.substring(packageName.length + 1);
+    var packagePath = packageUri.path.substring(packageName.length + 1);
     return packageBase.resolve(packagePath);
   }
 
@@ -76,13 +76,13 @@ class MapPackages extends PackagesBase {
 
   Iterable<String> get packages => _mapping.keys;
 
-  Map<String, Uri> asMap() => new UnmodifiableMapView<String, Uri>(_mapping);
+  Map<String, Uri> asMap() => UnmodifiableMapView<String, Uri>(_mapping);
 
   String get defaultPackageName => _mapping[""]?.toString();
 
   String packageMetadata(String packageName, String key) {
     if (packageName.isEmpty) return null;
-    Uri uri = _mapping[packageName];
+    var uri = _mapping[packageName];
     if (uri == null || !uri.hasFragment) return null;
     // This can be optimized, either by caching the map or by
     // parsing incrementally instead of parsing the entire fragment.
@@ -113,7 +113,7 @@ class NonFilePackagesDirectoryPackages extends PackagesBase {
   Uri getBase(String packageName) => _packageBase.resolve("$packageName/");
 
   Error _failListingPackages() {
-    return new UnsupportedError(
+    return UnsupportedError(
         "Cannot list packages for a ${_packageBase.scheme}: "
         "based package root");
   }

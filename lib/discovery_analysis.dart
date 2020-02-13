@@ -58,7 +58,7 @@ abstract class PackageContext {
   /// directory of `directory`. If there is, its corresponding `Packages` object
   /// should be provided as `root`.
   static PackageContext findAll(Directory directory,
-      {Packages root: Packages.noPackages}) {
+      {Packages root = Packages.noPackages}) {
     if (!directory.existsSync()) {
       throw ArgumentError("Directory not found: $directory");
     }
@@ -66,13 +66,13 @@ abstract class PackageContext {
     void findRoots(Directory directory) {
       Packages packages;
       List<PackageContext> oldContexts;
-      File packagesFile = File(path.join(directory.path, ".packages"));
+      var packagesFile = File(path.join(directory.path, ".packages"));
       if (packagesFile.existsSync()) {
         packages = _loadPackagesFile(packagesFile);
         oldContexts = contexts;
         contexts = [];
       } else {
-        Directory packagesDir =
+        var packagesDir =
             Directory(path.join(directory.path, "packages"));
         if (packagesDir.existsSync()) {
           packages = FilePackagesDirectoryPackages(packagesDir);
@@ -111,7 +111,7 @@ class _PackageContext implements PackageContext {
 
   Map<Directory, Packages> asMap() {
     var result = HashMap<Directory, Packages>();
-    recurse(_PackageContext current) {
+    void recurse(_PackageContext current) {
       result[current.directory] = current.packages;
       for (var child in current.children) {
         recurse(child);
@@ -123,19 +123,19 @@ class _PackageContext implements PackageContext {
   }
 
   PackageContext operator [](Directory directory) {
-    String path = directory.path;
+    var path = directory.path;
     if (!path.startsWith(this.directory.path)) {
       throw ArgumentError("Not inside $path: $directory");
     }
-    _PackageContext current = this;
+    var current = this;
     // The current path is know to agree with directory until deltaIndex.
-    int deltaIndex = current.directory.path.length;
+    var deltaIndex = current.directory.path.length;
     List children = current.children;
-    int i = 0;
+    var i = 0;
     while (i < children.length) {
       // TODO(lrn): Sort children and use binary search.
       _PackageContext child = children[i];
-      String childPath = child.directory.path;
+      var childPath = child.directory.path;
       if (_stringsAgree(path, childPath, deltaIndex, childPath.length)) {
         deltaIndex = childPath.length;
         if (deltaIndex == path.length) {
@@ -153,7 +153,7 @@ class _PackageContext implements PackageContext {
 
   static bool _stringsAgree(String a, String b, int start, int end) {
     if (a.length < end || b.length < end) return false;
-    for (int i = start; i < end; i++) {
+    for (var i = start; i < end; i++) {
       if (a.codeUnitAt(i) != b.codeUnitAt(i)) return false;
     }
     return true;

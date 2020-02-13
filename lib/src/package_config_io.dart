@@ -36,7 +36,7 @@ Future<PackageConfig> readAnyConfigFile(
     onError(e);
     return const SimplePackageConfig.empty();
   }
-  int firstChar = firstNonWhitespaceChar(bytes);
+  var firstChar = firstNonWhitespaceChar(bytes);
   if (firstChar != $lbrace) {
     // Definitely not a JSON object, probably a .packages.
     if (preferNewest) {
@@ -88,7 +88,7 @@ Future<PackageConfig> readAnyConfigFileUri(
         file.toString(), "file", "File cannot be read"));
     return const SimplePackageConfig.empty();
   }
-  int firstChar = firstNonWhitespaceChar(bytes);
+  var firstChar = firstNonWhitespaceChar(bytes);
   if (firstChar != $lbrace) {
     // Definitely not a JSON object, probably a .packages.
     if (preferNewest) {

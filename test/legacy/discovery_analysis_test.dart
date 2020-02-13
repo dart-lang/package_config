@@ -13,7 +13,7 @@ import "package:package_config/packages.dart";
 import "package:path/path.dart" as path;
 import "package:test/test.dart";
 
-main() {
+void main() {
   fileTest("basic", {
     ".packages": packagesFile,
     "foo": {".packages": packagesFile},
@@ -22,21 +22,21 @@ main() {
     },
     "baz": {}
   }, (Directory directory) {
-    var dirUri = new Uri.directory(directory.path);
-    PackageContext ctx = PackageContext.findAll(directory);
-    PackageContext root = ctx[directory];
+    var dirUri = Uri.directory(directory.path);
+    var ctx = PackageContext.findAll(directory);
+    var root = ctx[directory];
     expect(root, same(ctx));
     validatePackagesFile(root.packages, dirUri);
     var fooDir = sub(directory, "foo");
-    PackageContext foo = ctx[fooDir];
+    var foo = ctx[fooDir];
     expect(identical(root, foo), isFalse);
     validatePackagesFile(foo.packages, dirUri.resolve("foo/"));
     var barDir = sub(directory, "bar");
-    PackageContext bar = ctx[sub(directory, "bar")];
+    var bar = ctx[sub(directory, "bar")];
     validatePackagesDir(bar.packages, dirUri.resolve("bar/"));
-    PackageContext barbar = ctx[sub(barDir, "bar")];
+    var barbar = ctx[sub(barDir, "bar")];
     expect(barbar, same(bar)); // inherited.
-    PackageContext baz = ctx[sub(directory, "baz")];
+    var baz = ctx[sub(directory, "baz")];
     expect(baz, same(root)); // inherited.
 
     var map = ctx.asMap();
@@ -47,7 +47,7 @@ main() {
 }
 
 Directory sub(Directory parent, String dirName) {
-  return new Directory(path.join(parent.path, dirName));
+  return Directory(path.join(parent.path, dirName));
 }
 
 const packagesFile = """
@@ -91,7 +91,7 @@ Uri pkg(String packageName, String packagePath) {
   } else {
     path = "$packageName/$packagePath";
   }
-  return new Uri(scheme: "package", path: path);
+  return Uri(scheme: "package", path: path);
 }
 
 /// Create a directory structure from [description] and run [fileTest].
@@ -102,7 +102,7 @@ Uri pkg(String packageName, String packagePath) {
 void fileTest(
     String name, Map description, Future fileTest(Directory directory)) {
   group("file-test", () {
-    Directory tempDir = Directory.systemTemp.createTempSync("file-test");
+    var tempDir = Directory.systemTemp.createTempSync("file-test");
     setUp(() {
       _createFiles(tempDir, description);
     });
@@ -116,11 +116,11 @@ void fileTest(
 void _createFiles(Directory target, Map description) {
   description.forEach((name, content) {
     if (content is Map) {
-      Directory subDir = new Directory(path.join(target.path, name));
+      var subDir = Directory(path.join(target.path, name));
       subDir.createSync();
       _createFiles(subDir, content);
     } else {
-      File file = new File(path.join(target.path, name));
+      var file = File(path.join(target.path, name));
       file.writeAsStringSync(content, flush: true);
     }
   });

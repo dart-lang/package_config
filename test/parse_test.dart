@@ -48,14 +48,14 @@ void main() {
 
     group("invalid", () {
       var baseFile = Uri.file("/tmp/file.dart");
-      testThrows(String name, String content) {
+      void testThrows(String name, String content) {
         test(name, () {
           expect(
               () => packages.parse(utf8.encode(content), baseFile, throwError),
               throwsA(TypeMatcher<FormatException>()));
         });
         test(name + ", handle error", () {
-          bool hadError = false;
+          var hadError = false;
           packages.parse(utf8.encode(content), baseFile, (error) {
             hadError = true;
             expect(error, isA<FormatException>());
@@ -256,7 +256,7 @@ void main() {
     });
 
     group("invalid", () {
-      testThrows(String name, String source) {
+      void testThrows(String name, String source) {
         test(name, () {
           expect(
               () => parsePackageConfigBytes(utf8.encode(source),

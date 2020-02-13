@@ -24,7 +24,7 @@ abstract class PackageConfig {
   /// A package configuration with no available packages.
   /// Is used as a default value where a package configuration
   /// is expected, but none have been specified or found.
-  static const PackageConfig empty = const SimplePackageConfig.empty();
+  static const PackageConfig empty = SimplePackageConfig.empty();
 
   /// Creats a package configuration with the provided available [packages].
   ///

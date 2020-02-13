@@ -23,14 +23,14 @@ class FilePackagesDirectoryPackages extends PackagesBase {
 
   Uri getBase(String packageName) {
     return _packageToBaseUriMap.putIfAbsent(packageName, () {
-      return new Uri.file(pathJoin(_packageDir.path, packageName, '.'));
+      return Uri.file(pathJoin(_packageDir.path, packageName, '.'));
     });
   }
 
   Iterable<String> _listPackageNames() {
     return _packageDir
         .listSync()
-        .where((e) => e is Directory)
+        .whereType<Directory>()
         .map((e) => fileName(e.path));
   }
 
@@ -41,6 +41,6 @@ class FilePackagesDirectoryPackages extends PackagesBase {
     for (var packageName in _listPackageNames()) {
       result[packageName] = getBase(packageName);
     }
-    return new UnmodifiableMapView<String, Uri>(result);
+    return UnmodifiableMapView<String, Uri>(result);
   }
 }

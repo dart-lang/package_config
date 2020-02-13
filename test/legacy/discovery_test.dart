@@ -2,6 +2,7 @@
 // for details. All rights reserved. Use of this source code is governed by a
 // BSD-style license that can be found in the LICENSE file.
 
+@deprecated
 library package_config.discovery_test;
 
 import "dart:async";
@@ -52,10 +53,10 @@ Uri pkg(String packageName, String packagePath) {
   } else {
     path = "$packageName/$packagePath";
   }
-  return new Uri(scheme: "package", path: path);
+  return Uri(scheme: "package", path: path);
 }
 
-main() {
+void main() {
   generalTest(".packages", {
     ".packages": packagesFile,
     "script.dart": "main(){}",
@@ -80,7 +81,7 @@ main() {
     "script.dart": "main(){}"
   }, (Uri location) async {
     Packages resolver;
-    bool isFile = (location.scheme == "file");
+    var isFile = (location.scheme == "file");
     resolver = await findPackages(location);
     validatePackagesDir(resolver, location);
     resolver = await findPackages(location.resolve("script.dart"));
@@ -96,7 +97,7 @@ main() {
   generalTest("underscore packages", {
     "packages": {"_foo": {}}
   }, (Uri location) async {
-    Packages resolver = await findPackages(location);
+    var resolver = await findPackages(location);
     expect(resolver.resolve(pkg("_foo", "foo.dart")),
         equals(location.resolve("packages/_foo/foo.dart")));
   });
@@ -162,7 +163,7 @@ main() {
   });
 
   test(".packages w/ loader", () async {
-    Uri location = Uri.parse("krutch://example.com/path/");
+    var location = Uri.parse("krutch://example.com/path/");
     Future<List<int>> loader(Uri file) async {
       if (file.path.endsWith(".packages")) {
         return packagesFile.codeUnits;
@@ -186,7 +187,7 @@ main() {
   });
 
   test("no packages w/ loader", () async {
-    Uri location = Uri.parse("krutch://example.com/path/");
+    var location = Uri.parse("krutch://example.com/path/");
     Future<List<int>> loader(Uri file) async {
       throw "not found";
     }
@@ -208,46 +209,46 @@ main() {
 
   generalTest("loadPackagesFile", {".packages": packagesFile},
       (Uri directory) async {
-    Uri file = directory.resolve(".packages");
-    Packages resolver = await loadPackagesFile(file);
+    var file = directory.resolve(".packages");
+    var resolver = await loadPackagesFile(file);
     validatePackagesFile(resolver, file);
   });
 
   generalTest(
       "loadPackagesFile non-default name", {"pheldagriff": packagesFile},
       (Uri directory) async {
-    Uri file = directory.resolve("pheldagriff");
-    Packages resolver = await loadPackagesFile(file);
+    var file = directory.resolve("pheldagriff");
+    var resolver = await loadPackagesFile(file);
     validatePackagesFile(resolver, file);
   });
 
   test("loadPackagesFile w/ loader", () async {
     Future<List<int>> loader(Uri uri) async => packagesFile.codeUnits;
-    Uri file = Uri.parse("krutz://example.com/.packages");
-    Packages resolver = await loadPackagesFile(file, loader: loader);
+    var file = Uri.parse("krutz://example.com/.packages");
+    var resolver = await loadPackagesFile(file, loader: loader);
     validatePackagesFile(resolver, file);
   });
 
   generalTest("loadPackagesFile not found", {}, (Uri directory) async {
-    Uri file = directory.resolve(".packages");
+    var file = directory.resolve(".packages");
     expect(
         loadPackagesFile(file),
-        throwsA(anyOf(new TypeMatcher<FileSystemException>(),
-            new TypeMatcher<HttpException>())));
+        throwsA(anyOf(TypeMatcher<FileSystemException>(),
+            TypeMatcher<HttpException>())));
   });
 
   generalTest("loadPackagesFile syntax error", {".packages": "syntax error"},
       (Uri directory) async {
-    Uri file = directory.resolve(".packages");
+    var file = directory.resolve(".packages");
     expect(loadPackagesFile(file), throwsFormatException);
   });
 
   generalTest("getPackagesDir", {
     "packages": {"foo": {}, "bar": {}, "baz": {}}
   }, (Uri directory) async {
-    Uri packages = directory.resolve("packages/");
-    Packages resolver = getPackagesDirectory(packages);
-    Uri resolved = resolver.resolve(pkg("foo", "flip/flop"));
+    var packages = directory.resolve("packages/");
+    var resolver = getPackagesDirectory(packages);
+    var resolved = resolver.resolve(pkg("foo", "flip/flop"));
     expect(resolved, packages.resolve("foo/flip/flop"));
   });
 }
@@ -259,14 +260,14 @@ main() {
 /// as a string.
 void fileTest(String name, Map description, Future fileTest(Uri directory)) {
   group("file-test", () {
-    Directory tempDir = Directory.systemTemp.createTempSync("file-test");
+    var tempDir = Directory.systemTemp.createTempSync("file-test");
     setUp(() {
       _createFiles(tempDir, description);
     });
     tearDown(() {
       tempDir.deleteSync(recursive: true);
     });
-    test(name, () => fileTest(new Uri.file(path.join(tempDir.path, "."))));
+    test(name, () => fileTest(Uri.file(path.join(tempDir.path, "."))));
   });
 }
 
@@ -281,7 +282,7 @@ void httpTest(String name, Map description, Future httpTest(Uri directory)) {
     var uri;
     setUp(() {
       return HttpServer.bind(InternetAddress.loopbackIPv4, 0).then((server) {
-        uri = new Uri(
+        uri = Uri(
             scheme: "http", host: "127.0.0.1", port: server.port, path: "/");
         serverSub = server.listen((HttpRequest request) {
           // No error handling.
@@ -290,7 +291,7 @@ void httpTest(String name, Map description, Future httpTest(Uri directory)) {
           if (path.endsWith('/')) path = path.substring(0, path.length - 1);
           var parts = path.split('/');
           dynamic fileOrDir = description;
-          for (int i = 0; i < parts.length; i++) {
+          for (var i = 0; i < parts.length; i++) {
             fileOrDir = fileOrDir[parts[i]];
             if (fileOrDir == null) {
               request.response.statusCode = 404;
@@ -316,11 +317,11 @@ void generalTest(String name, Map description, Future action(Uri location)) {
 void _createFiles(Directory target, Map description) {
   description.forEach((name, content) {
     if (content is Map) {
-      Directory subDir = new Directory(path.join(target.path, name));
+      var subDir = Directory(path.join(target.path, name));
       subDir.createSync();
       _createFiles(subDir, content);
     } else {
-      File file = new File(path.join(target.path, name));
+      var file = File(path.join(target.path, name));
       file.writeAsStringSync(content, flush: true);
     }
   });
