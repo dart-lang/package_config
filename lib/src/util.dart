@@ -156,7 +156,8 @@ int firstNonWhitespaceChar(List<int> bytes) {
 /// `baseUri.resolveUri(result) == uri`,
 ///
 /// The `baseUri` must be absolute.
-Uri relativizeUri(Uri uri, Uri baseUri) {
+Uri relativizeUri(Uri uri, Uri /*?*/ baseUri) {
+  if (baseUri == null) return uri;
   assert(baseUri.isAbsolute);
   if (uri.hasQuery || uri.hasFragment) {
     uri = Uri(
@@ -248,7 +249,7 @@ Future<Uint8List /*?*/ > _httpGet(Uri uri) async {
   for (var list in splitContent) {
     totalLength += list.length;
   }
-  var result = new Uint8List(totalLength);
+  var result = Uint8List(totalLength);
   var offset = 0;
   for (Uint8List contentPart in splitContent) {
     result.setRange(offset, offset + contentPart.length, contentPart);
@@ -264,7 +265,7 @@ Future<Uint8List /*?*/ > _httpGet(Uri uri) async {
 /// path separator occurs in the string.
 String fileName(String path) {
   var separator = Platform.pathSeparator;
-  int lastSeparator = path.lastIndexOf(separator);
+  var lastSeparator = path.lastIndexOf(separator);
   if (lastSeparator < 0) return path;
   return path.substring(lastSeparator + separator.length);
 }
@@ -276,7 +277,7 @@ String fileName(String path) {
 /// path separator occurs in the string.
 String dirName(String path) {
   var separator = Platform.pathSeparator;
-  int lastSeparator = path.lastIndexOf(separator);
+  var lastSeparator = path.lastIndexOf(separator);
   if (lastSeparator < 0) return "";
   return path.substring(0, lastSeparator);
 }
@@ -287,11 +288,11 @@ String dirName(String path) {
 /// inserted.
 String pathJoin(String part1, String part2, [String part3]) {
   var separator = Platform.pathSeparator;
-  String separator1 = part1.endsWith(separator) ? "" : separator;
+  var separator1 = part1.endsWith(separator) ? "" : separator;
   if (part3 == null) {
     return "$part1$separator1$part2";
   }
-  String separator2 = part2.endsWith(separator) ? "" : separator;
+  var separator2 = part2.endsWith(separator) ? "" : separator;
   return "$part1$separator1$part2$separator2$part3";
 }
 
@@ -301,7 +302,7 @@ String pathJoin(String part1, String part2, [String part3]) {
 /// inserted.
 String pathJoinAll(Iterable<String> parts) {
   var buffer = StringBuffer();
-  String separator = "";
+  var separator = "";
   for (var part in parts) {
     buffer..write(separator)..write(part);
     separator =

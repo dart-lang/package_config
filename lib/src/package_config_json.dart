@@ -221,11 +221,23 @@ PackageConfig parsePackageConfigJson(
 
 final _jsonUtf8Encoder = JsonUtf8Encoder("  ");
 
-void writePackageConfigJson(
+void writePackageConfigJsonUtf8(
     PackageConfig config, Uri baseUri, Sink<List<int>> output) {
-  // Write .dart_tool/package_config.json first.
-  var extraData = config.extraData;
-  var data = <String, dynamic>{
+  // Can be optimized.
+  var data = packageConfigToJson(config, baseUri);
+  output.add(_jsonUtf8Encoder.convert(data) as Uint8List);
+}
+
+void writePackageConfigJsonString(
+    PackageConfig config, Uri baseUri, StringSink output) {
+  // Can be optimized.
+  var data = packageConfigToJson(config, baseUri);
+  output.write(JsonEncoder.withIndent("  ").convert(data) as Uint8List);
+}
+
+Map<String, dynamic> packageConfigToJson(PackageConfig config, Uri baseUri) =>
+  <String, dynamic>{
+    ...?_extractExtraData(config.extraData, _topNames),
     _configVersionKey: PackageConfig.maxVersion,
     _packagesKey: [
       for (var package in config.packages)
@@ -240,10 +252,7 @@ void writePackageConfigJson(
           ...?_extractExtraData(package.extraData, _packageNames),
         }
     ],
-    ...?_extractExtraData(extraData, _topNames),
   };
-  output.add(_jsonUtf8Encoder.convert(data) as Uint8List);
-}
 
 void writeDotPackages(PackageConfig config, Uri baseUri, StringSink output) {
   var extraData = config.extraData;

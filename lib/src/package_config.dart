@@ -30,8 +30,21 @@ abstract class PackageConfig {
   ///
   /// The packages must be valid packages (valid package name, valid
   /// absolute directory URIs, valid language version, if any),
-  /// and there must not be two packages with the same name or with
-  /// overlapping root directories.
+  /// and there must not be two packages with the same name.
+  ///
+  /// The package's root ([Package.rootUri]) and package-root
+  /// ([Package.packageUriRoot]) paths must satisfy a number of constraints
+  /// We say that one path (which we know ends with a `/` charater)
+  /// is inside another path, if the latter path is a prefix of the former path,
+  /// including the two paths being the same.
+  ///
+  /// * No package's root must be the same as another package's root.
+  /// * The package-root of a package must be inside the pacakge's root.
+  /// * If one package's package-root is inside another package's root,
+  ///   then the latter package's package root must not be inside the former
+  ///   package's root. (No getting between a package and its package root!)
+  ///   This also disallows a package's root being the same as another
+  ///   package's package root.
   ///
   /// If supplied, the [extraData] will be available as the
   /// [PackageConfig.extraData] of the created configuration.
@@ -80,19 +93,52 @@ abstract class PackageConfig {
           {void onError(Object error)}) =>
       parsePackageConfigString(configuration, baseUri, onError);
 
+  /// Parses the JSON data of a package configuration file.
+  ///
+  /// The [configuration] must be a JSON-like Dart data structure,
+  /// like the one provided by parsing JSON text using `dart:convert`,
+  /// containing a valid package configuration.
+  ///
+  /// The [baseUri] is used as the base for resolving relative
+  /// URI references in the configuration file. If the configuration
+  /// has been read from a file, the [baseUri] can be the URI of that
+  /// file, or of the directory it occurs in.
+  ///
+  /// If [onError] is provided, errors found during parsing or building
+  /// the configuration are reported by calling [onError] instead of
+  /// throwing, and parser makes a *best effort* attempt to continue
+  /// despite the error. The input must still be valid JSON.
+  /// The result may be a [PackageConfig.empty] if there is no way to
+  /// extract useful information from the bytes.
+  static PackageConfig parseJson(dynamic jsonData, Uri baseUri,
+          {void onError(Object error)}) =>
+      parsePackageConfigJson(jsonData, baseUri, onError);
+
   /// Writes a configuration file for this configuration on [output].
   ///
   /// If [baseUri] is provided, URI references in the generated file
   /// will be made relative to [baseUri] where possible.
   static void writeBytes(PackageConfig configuration, Sink<Uint8List> output,
-      [Uri baseUri]) {}
+      [Uri /*?*/ baseUri]) {
+    writePackageConfigJsonUtf8(configuration, baseUri, output);
+  }
 
   /// Writes a configuration JSON text for this configuration on [output].
   ///
   /// If [baseUri] is provided, URI references in the generated file
   /// will be made relative to [baseUri] where possible.
   static void writeString(PackageConfig configuration, StringSink output,
-      [Uri baseUri]) {}
+      [Uri /*?*/ baseUri]) {
+    writePackageConfigJsonString(configuration, baseUri, output);
+  }
+
+  /// Converts a configuration to a JSON-like data structure.
+  ///
+  /// If [baseUri] is provided, URI references in the generated data
+  /// will be made relative to [baseUri] where possible.
+  static Map<String, dynamic> toJson(PackageConfig configuration,
+          [Uri /*?*/ baseUri]) =>
+      packageConfigToJson(configuration, baseUri);
 
   /// The configuration version number.
   ///

@@ -3,6 +3,7 @@
 // BSD-style license that can be found in the LICENSE file.
 
 import "dart:convert";
+import 'dart:typed_data';
 
 import "package:test/test.dart";
 
@@ -364,11 +365,79 @@ void main() {
           "same roots",
           '{$cfg,"packages":[{$name,$root},{"name":"bar",$root}]}');
       testThrows(
-          // The root of bar is inside the package root of foo.
-          "inside lib",
+          // The root of bar is inside the root of foo,
+          // but the package root of foo is inside the root of bar.
+          "between root and lib",
           '{$cfg,"packages":['
-              '{"name":"foo","rootUri":"/foo/","packageUri":"lib/"},'
-              '{"name":"bar","rootUri":"/foo/lib/qux/"}]}');
+              '{"name":"foo","rootUri":"/foo/","packageUri":"bar/lib/"},'
+              '{"name":"bar","rootUri":"/foo/bar/"},"packageUri":"baz/lib"]}');
     });
+  });
+
+  group("factories", () {
+    void testConfig(String name, PackageConfig config, PackageConfig expected) {
+      group(name, () {
+        test("structure", () {
+          expect(config.version, expected.version);
+          var expectedPackages = {for (var p in expected.packages) p.name};
+          var actualPackages = {for (var p in config.packages) p.name};
+          expect(actualPackages, expectedPackages);
+        });
+        for (var package in config.packages) {
+          var name = package.name;
+          test("package $name", () {
+            var expectedPackage = expected[name];
+            expect(expectedPackage, isNotNull);
+            expect(package.root, expectedPackage.root, reason: "root");
+            expect(package.packageUriRoot, expectedPackage.packageUriRoot,
+                reason: "package root");
+            expect(package.languageVersion, expectedPackage.languageVersion,
+                reason: "languageVersion");
+          });
+        }
+      });
+    }
+
+    var configText = """
+     {"configVersion": 2, "packages": [
+       {
+         "name": "foo",
+         "rootUri": "foo/",
+         "packageUri": "bar/",
+         "languageVersion": "1.2"
+       }
+     ]}
+    """;
+    var baseUri = Uri.parse("file:///start/");
+    var config = PackageConfig([
+      Package("foo", Uri.parse("file:///start/foo/"),
+          packageUriRoot: Uri.parse("file:///start/foo/bar/"),
+          languageVersion: LanguageVersion(1, 2))
+    ]);
+    testConfig(
+        "string", PackageConfig.parseString(configText, baseUri), config);
+    testConfig(
+        "bytes",
+        PackageConfig.parseBytes(
+            Uint8List.fromList(configText.codeUnits), baseUri),
+        config);
+    testConfig("json",
+        PackageConfig.parseJson(jsonDecode(configText), baseUri), config);
+
+    baseUri = Uri.parse("file:///start2/");
+    config = PackageConfig([
+      Package("foo", Uri.parse("file:///start2/foo/"),
+          packageUriRoot: Uri.parse("file:///start2/foo/bar/"),
+          languageVersion: LanguageVersion(1, 2))
+    ]);
+    testConfig(
+        "string2", PackageConfig.parseString(configText, baseUri), config);
+    testConfig(
+        "bytes2",
+        PackageConfig.parseBytes(
+            Uint8List.fromList(configText.codeUnits), baseUri),
+        config);
+    testConfig("json2",
+        PackageConfig.parseJson(jsonDecode(configText), baseUri), config);
   });
 }
