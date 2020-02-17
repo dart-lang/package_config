@@ -71,7 +71,7 @@ abstract class PackageConfig {
   /// extract useful information from the bytes.
   static PackageConfig parseBytes(Uint8List bytes, Uri baseUri,
           {void onError(Object error)}) =>
-      parsePackageConfigBytes(bytes, baseUri, onError);
+      parsePackageConfigBytes(bytes, baseUri, onError ?? throwError);
 
   /// Parses a package configuration file.
   ///
@@ -91,7 +91,7 @@ abstract class PackageConfig {
   /// extract useful information from the bytes.
   static PackageConfig parseString(String configuration, Uri baseUri,
           {void onError(Object error)}) =>
-      parsePackageConfigString(configuration, baseUri, onError);
+      parsePackageConfigString(configuration, baseUri, onError ?? throwError);
 
   /// Parses the JSON data of a package configuration file.
   ///
@@ -112,7 +112,7 @@ abstract class PackageConfig {
   /// extract useful information from the bytes.
   static PackageConfig parseJson(dynamic jsonData, Uri baseUri,
           {void onError(Object error)}) =>
-      parsePackageConfigJson(jsonData, baseUri, onError);
+      parsePackageConfigJson(jsonData, baseUri, onError ?? throwError);
 
   /// Writes a configuration file for this configuration on [output].
   ///
