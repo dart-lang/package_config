@@ -7,7 +7,7 @@ import 'dart:typed_data';
 
 import "package:test/test.dart";
 
-import "package:package_config/package_config.dart";
+import "package:package_config/package_config_types.dart";
 import "package:package_config/src/packages_file.dart" as packages;
 import "package:package_config/src/package_config_json.dart";
 import "src/util.dart";
