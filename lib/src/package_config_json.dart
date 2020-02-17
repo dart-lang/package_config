@@ -236,23 +236,25 @@ void writePackageConfigJsonString(
 }
 
 Map<String, dynamic> packageConfigToJson(PackageConfig config, Uri baseUri) =>
-  <String, dynamic>{
-    ...?_extractExtraData(config.extraData, _topNames),
-    _configVersionKey: PackageConfig.maxVersion,
-    _packagesKey: [
-      for (var package in config.packages)
-        <String, dynamic>{
-          _nameKey: package.name,
-          _rootUriKey: relativizeUri(package.root, baseUri),
-          if (package.root != package.packageUriRoot)
-            _packageUriKey: relativizeUri(package.packageUriRoot, package.root),
-          if (package.languageVersion != null &&
-              package.languageVersion is! InvalidLanguageVersion)
-            _languageVersionKey: package.languageVersion.toString(),
-          ...?_extractExtraData(package.extraData, _packageNames),
-        }
-    ],
-  };
+    <String, dynamic>{
+      ...?_extractExtraData(config.extraData, _topNames),
+      _configVersionKey: PackageConfig.maxVersion,
+      _packagesKey: [
+        for (var package in config.packages)
+          <String, dynamic>{
+            _nameKey: package.name,
+            _rootUriKey: relativizeUri(package.root, baseUri).toString(),
+            if (package.root != package.packageUriRoot)
+              _packageUriKey:
+                  relativizeUri(package.packageUriRoot, package.root)
+                      .toString(),
+            if (package.languageVersion != null &&
+                package.languageVersion is! InvalidLanguageVersion)
+              _languageVersionKey: package.languageVersion.toString(),
+            ...?_extractExtraData(package.extraData, _packageNames),
+          }
+      ],
+    };
 
 void writeDotPackages(PackageConfig config, Uri baseUri, StringSink output) {
   var extraData = config.extraData;
