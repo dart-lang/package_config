@@ -163,8 +163,7 @@ Packages findPackagesFromFile(Uri fileBaseUri) {
   if (location == null) return Packages.noPackages;
   if (location is File) {
     var fileBytes = location.readAsBytesSync();
-    var map =
-        pkgfile.parse(fileBytes, Uri.file(location.path));
+    var map = pkgfile.parse(fileBytes, Uri.file(location.path));
     return MapPackages(map);
   }
   assert(location is Directory);

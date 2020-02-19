@@ -87,8 +87,7 @@ void main() {
         "script.dart": "main(){}",
       }
     }, (Directory directory) async {
-      var config =
-          await findPackageConfig(subdir(directory, "subdir/"));
+      var config = await findPackageConfig(subdir(directory, "subdir/"));
       expect(config.version, 2);
       validatePackagesFile(config, directory);
     });
@@ -228,8 +227,7 @@ void main() {
       });
       fileTest("prefer .packages", files, (Directory directory) async {
         var file = dirFile(directory, ".packages");
-        var config =
-            await loadPackageConfig(file, preferNewest: false);
+        var config = await loadPackageConfig(file, preferNewest: false);
         expect(config.version, 1);
         validatePackagesFile(config, directory);
       });

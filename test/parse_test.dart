@@ -421,8 +421,8 @@ void main() {
         PackageConfig.parseBytes(
             Uint8List.fromList(configText.codeUnits), baseUri),
         config);
-    testConfig("json",
-        PackageConfig.parseJson(jsonDecode(configText), baseUri), config);
+    testConfig("json", PackageConfig.parseJson(jsonDecode(configText), baseUri),
+        config);
 
     baseUri = Uri.parse("file:///start2/");
     config = PackageConfig([

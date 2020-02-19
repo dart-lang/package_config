@@ -364,6 +364,7 @@ abstract class PackageTree {
 class MutablePackageTree implements PackageTree {
   /// A list of packages that are not nested inside each other.
   final List<SimplePackage> packages = [];
+
   /// The tree of the immediately nested packages inside each package.
   ///
   /// Indexed by [Package.name].

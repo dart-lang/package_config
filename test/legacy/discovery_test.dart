@@ -233,8 +233,8 @@ void main() {
     var file = directory.resolve(".packages");
     expect(
         loadPackagesFile(file),
-        throwsA(anyOf(TypeMatcher<FileSystemException>(),
-            TypeMatcher<HttpException>())));
+        throwsA(anyOf(
+            TypeMatcher<FileSystemException>(), TypeMatcher<HttpException>())));
   });
 
   generalTest("loadPackagesFile syntax error", {".packages": "syntax error"},

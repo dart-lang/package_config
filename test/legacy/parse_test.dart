@@ -2,6 +2,7 @@
 // for details. All rights reserved. Use of this source code is governed by a
 // BSD-style license that can be found in the LICENSE file.
 
+@deprecated
 library package_config.parse_test;
 
 import "package:package_config/packages.dart";
@@ -9,7 +10,7 @@ import "package:package_config/packages_file.dart" show parse;
 import "package:package_config/src/packages_impl.dart";
 import "package:test/test.dart";
 
-main() {
+void main() {
   var base = Uri.parse("file:///one/two/three/packages.map");
   test("empty", () {
     var packages = doParse(emptySample, base);
@@ -96,12 +97,12 @@ main() {
 
   test("no invalid chars accepted", () {
     var map = {};
-    for (int i = 0; i < allValidChars.length; i++) {
+    for (var i = 0; i < allValidChars.length; i++) {
       map[allValidChars.codeUnitAt(i)] = true;
     }
-    for (int i = 0; i <= 255; i++) {
+    for (var i = 0; i <= 255; i++) {
       if (map[i] == true) continue;
-      var char = new String.fromCharCode(i);
+      var char = String.fromCharCode(i);
       expect(() => doParse("x${char}x:x", null),
           anyOf(throwsNoSuchMethodError, throwsFormatException));
     }
@@ -192,7 +193,7 @@ main() {
     });
   });
 
-  for (String invalidSample in invalid) {
+  for (var invalidSample in invalid) {
     test("invalid '$invalidSample'", () {
       var result;
       try {
@@ -208,9 +209,9 @@ main() {
 
 Packages doParse(String sample, Uri baseUri,
     {bool allowDefaultPackage = false}) {
-  Map<String, Uri> map = parse(sample.codeUnits, baseUri,
+  var map = parse(sample.codeUnits, baseUri,
       allowDefaultPackage: allowDefaultPackage);
-  return new MapPackages(map);
+  return MapPackages(map);
 }
 
 // Valid samples.

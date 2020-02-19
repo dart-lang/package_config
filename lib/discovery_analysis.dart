@@ -72,8 +72,7 @@ abstract class PackageContext {
         oldContexts = contexts;
         contexts = [];
       } else {
-        var packagesDir =
-            Directory(path.join(directory.path, "packages"));
+        var packagesDir = Directory(path.join(directory.path, "packages"));
         if (packagesDir.existsSync()) {
           packages = FilePackagesDirectoryPackages(packagesDir);
           oldContexts = contexts;

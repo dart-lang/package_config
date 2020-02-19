@@ -69,8 +69,7 @@ Map<String, Uri> parse(List<int> source, Uri baseLocation,
         : !isValidPackageName(packageName)) {
       throw FormatException("Not a valid package name", packageName, 0);
     }
-    var packageValue =
-        String.fromCharCodes(source, separatorIndex + 1, end);
+    var packageValue = String.fromCharCodes(source, separatorIndex + 1, end);
     Uri packageLocation;
     if (packageName.isEmpty) {
       if (!isValidPackageName(packageValue)) {
