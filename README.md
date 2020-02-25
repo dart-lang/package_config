@@ -16,9 +16,3 @@ The primary libraries are
 The package includes deprecated backwards compatible functionality to
 work with the `.packages` file. This functionality will not be maintained,
 and will be removed in a future version of this package.
-
-## Features and bugs
-
-Please file feature requests and bugs at the [issue tracker][tracker].
-
-[tracker]: https://github.com/dart-lang/package_config/issues
