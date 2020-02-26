@@ -4,6 +4,8 @@ dart:
   - dev
 dart_task:
   - test
+  - command:
+    - pub run build_runner test -- -p chrome
   - dartfmt
   - dartanalyzer: --fatal-warnings .
 
