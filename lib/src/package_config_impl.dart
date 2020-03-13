@@ -200,11 +200,11 @@ class SimplePackage implements Package {
       onError(PackageConfigArgumentError(
           "$root", "root", "Must not be a package URI"));
       fatalError = true;
-    } else if (!isAbsoluteDirectoryUri(root)) {
+    } else if (!isDirectoryUri(root)) {
       onError(PackageConfigArgumentError(
           "$root",
           "root",
-          "In package $name: Not an absolute URI with no query or fragment "
+          "In package $name: Not a URI with no query or fragment "
               "with a path ending in /"));
       // Try to recover. If the URI has a scheme,
       // then ensure that the path ends with `/`.
@@ -215,11 +215,11 @@ class SimplePackage implements Package {
       }
     }
     if (!fatalError) {
-      if (!isAbsoluteDirectoryUri(packageUriRoot)) {
+      if (!isDirectoryUri(packageUriRoot)) {
         onError(PackageConfigArgumentError(
             packageUriRoot,
             "packageUriRoot",
-            "In package $name: Not an absolute URI with no query or fragment "
+            "In package $name: Not a URI with no query or fragment "
                 "with a path ending in /"));
         packageUriRoot = root;
       } else if (!isUriPrefix(root, packageUriRoot)) {

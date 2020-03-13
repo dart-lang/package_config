@@ -1,3 +1,7 @@
+## 1.9.2+1
+
+- Clarify that directories do not have to be absolute.
+
 ## 1.9.2
 
 - Updated to support new rules for picking `package_config.json` over

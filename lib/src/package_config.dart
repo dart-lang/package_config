@@ -29,8 +29,8 @@ abstract class PackageConfig {
   /// Creats a package configuration with the provided available [packages].
   ///
   /// The packages must be valid packages (valid package name, valid
-  /// absolute directory URIs, valid language version, if any),
-  /// and there must not be two packages with the same name.
+  /// directory URIs, valid language version, if any), and there must
+  /// not be two packages with the same name.
   ///
   /// The package's root ([Package.rootUri]) and package-root
   /// ([Package.packageUriRoot]) paths must satisfy a number of constraints
@@ -214,8 +214,8 @@ abstract class Package {
   /// Creates a package with the provided properties.
   ///
   /// The [name] must be a valid package name.
-  /// The [root] must be an absolute directory URI, meaning an absolute URI
-  /// with no query or fragment path and a path starting and ending with `/`.
+  /// The [root] must be a directory URI, meaning a URI
+  /// with no query or fragment path and a path ending with `/`.
   /// The [packageUriRoot], if provided, must be either an absolute
   /// directory URI or a relative URI reference which is then resolved
   /// relative to [root]. It must then also be a subdirectory of [root],
@@ -238,7 +238,7 @@ abstract class Package {
 
   /// The location of the root of the package.
   ///
-  /// Is always an absolute URI with no query or fragment parts,
+  /// Is always a URI with no query or fragment parts,
   /// and with a path ending in `/`.
   ///
   /// All files in the [rootUri] directory are considered
@@ -250,7 +250,7 @@ abstract class Package {
   /// A `package:` URI with [name] as the package name is
   /// resolved relative to this location.
   ///
-  /// Is always an absolute URI with no query or fragment part
+  /// Is always a URI with no query or fragment part
   /// with a path ending in `/`,
   /// and with a location which is a subdirectory
   /// of the [root], or the same as the [root].

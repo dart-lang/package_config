@@ -100,12 +100,12 @@ String checkValidPackageUri(Uri packageUri, String name) {
   return packageName;
 }
 
-/// Checks whether URI is just an absolute directory.
+/// Checks whether URI is just a directory.
 ///
 /// * It must have a scheme.
 /// * It must not have a query or fragment.
 /// * The path must end with `/`.
-bool isAbsoluteDirectoryUri(Uri uri) {
+bool isDirectoryUri(Uri uri) {
   if (uri.hasQuery) return false;
   if (uri.hasFragment) return false;
   if (!uri.hasScheme) return false;
