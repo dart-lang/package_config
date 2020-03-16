@@ -36,7 +36,7 @@ void main() {
       expect(foo, isNotNull);
       expect(foo.root, Uri.parse("file:///foo/"));
       expect(foo.packageUriRoot, Uri.parse("file:///foo/lib/"));
-      expect(foo.languageVersion, null);
+      expect(foo.languageVersion, LanguageVersion(2, 7));
     });
 
     test("valid empty", () {
