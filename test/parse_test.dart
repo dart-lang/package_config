@@ -34,7 +34,7 @@ void main() {
 
       var foo = result["foo"];
       expect(foo, isNotNull);
-      expect(foo.root, Uri.parse("file:///foo/lib/"));
+      expect(foo.root, Uri.parse("file:///foo/"));
       expect(foo.packageUriRoot, Uri.parse("file:///foo/lib/"));
       expect(foo.languageVersion, null);
     });
