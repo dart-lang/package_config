@@ -1,4 +1,4 @@
-// Copyright (c) 2019, the Dart project authors.  Please see the AUTHORS file
+// Copyright (c) 2020, the Dart project authors.  Please see the AUTHORS file
 // for details. All rights reserved. Use of this source code is governed by a
 // BSD-style license that can be found in the LICENSE file.
 
@@ -16,12 +16,15 @@ void main() {
       expect(version.major, 3);
       expect(version.minor, 5);
     });
+
     test("negative major", () {
       expect(() => LanguageVersion(-1, 1), throwsArgumentError);
     });
+
     test("negative minor", () {
       expect(() => LanguageVersion(1, -1), throwsArgumentError);
     });
+
     test("minimal parse", () {
       var version = LanguageVersion.parse("3.5");
       expect(version.major, 3);
@@ -53,6 +56,7 @@ void main() {
     failParse("WhiteSpace 3", "1. 1");
     failParse("WhiteSpace 4", "1.1 ");
   });
+
   group("Package", () {
     test("minimal", () {
       var package = Package("name", root, extraData: unique);
@@ -66,14 +70,17 @@ void main() {
     test("absolute package root", () {
       var version = LanguageVersion(1, 1);
       var absolute = root.resolve("foo/bar/");
-      var package =
-          Package("name", root, packageUriRoot: absolute, languageVersion: version, extraData: unique);
+      var package = Package("name", root,
+          packageUriRoot: absolute,
+          languageVersion: version,
+          extraData: unique);
       expect(package.name, "name");
       expect(package.root, root);
       expect(package.packageUriRoot, absolute);
       expect(package.languageVersion, version);
       expect(package.extraData, same(unique));
     });
+
     test("relative package root", () {
       var relative = Uri.parse("foo/bar/");
       var absolute = root.resolveUri(relative);
@@ -91,19 +98,28 @@ void main() {
         expect(() => Package(badName, root), throwsPackageConfigError);
       });
     }
+
     test("Invalid root, not absolute", () {
-      expect(() => Package("name", Uri.parse("/foo/")), throwsPackageConfigError);
+      expect(
+          () => Package("name", Uri.parse("/foo/")), throwsPackageConfigError);
     });
+
     test("Invalid root, not ending in slash", () {
-      expect(() => Package("name", Uri.parse("file:///foo")), throwsPackageConfigError);
+      expect(() => Package("name", Uri.parse("file:///foo")),
+          throwsPackageConfigError);
     });
+
     test("invalid package root, not ending in slash", () {
-      expect(() => Package("name", root, packageUriRoot: Uri.parse("foo")), throwsPackageConfigError);
+      expect(() => Package("name", root, packageUriRoot: Uri.parse("foo")),
+          throwsPackageConfigError);
     });
+
     test("invalid package root, not inside root", () {
-      expect(() => Package("name", root, packageUriRoot: Uri.parse("../baz/")), throwsPackageConfigError);
+      expect(() => Package("name", root, packageUriRoot: Uri.parse("../baz/")),
+          throwsPackageConfigError);
     });
   });
+
   group("package config", () {
     test("emtpy", () {
       var empty = PackageConfig([], extraData: unique);
@@ -112,6 +128,7 @@ void main() {
       expect(empty.extraData, same(unique));
       expect(empty.resolve(pkg("a", "b")), isNull);
     });
+
     test("single", () {
       var package = Package("name", root);
       var single = PackageConfig([package], extraData: unique);
