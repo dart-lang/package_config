@@ -75,7 +75,7 @@ Future<LanguageVersion> languageVersionFromPubspec(
   // Find the sdk constraint, or return null if none is present
   var environment = pubspecYaml['environment'] as YamlMap;
   if (environment == null) return null;
-  var sdkConstraint = environment['version'] as String;
+  var sdkConstraint = environment['sdk'] as String;
   if (sdkConstraint == null) return null;
 
   var parsedConstraint = VersionConstraint.parse(sdkConstraint);
