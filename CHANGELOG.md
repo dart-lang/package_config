@@ -1,3 +1,9 @@
+## 1.10.0
+
+- Adds a `generate_from_legacy` script which generates a new style package
+  config from an old style `.packages` file, reading the corresponding pubspec
+  files in order to get the correct language versions. 
+
 ## 1.9.3
 
 - Fix `Package` constructor not accepting relative `packageUriRoot`.
