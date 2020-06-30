@@ -46,8 +46,6 @@ void main(List<String> args) async {
       pubspec = packageRoot.resolve('pubspec.yaml');
       languageVersion = await languageVersionFromPubspec(pubspec, name);
     }
-    print(packageRoot);
-    print(uri);
     packages.add(Package(name, packageRoot,
         languageVersion: languageVersion, packageUriRoot: uri));
   }
