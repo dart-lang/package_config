@@ -133,6 +133,9 @@ Future<void> writePackageConfigJsonFile(
   // Write .dart_tool/package_config.json first.
   var file =
       File(pathJoin(targetDirectory.path, ".dart_tool", "package_config.json"));
+  if (!file.parent.existsSync()) {
+    file.parent.createSync(recursive: true);
+  }
   var baseUri = file.uri;
   var sink = file.openWrite(encoding: utf8);
   writePackageConfigJsonUtf8(config, baseUri, sink);

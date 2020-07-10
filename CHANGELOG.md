@@ -1,3 +1,8 @@
+## 1.9.4
+
+- Fix failure in `savePackageConfig` when `.dart_tool` directory did not
+  already exist.
+
 ## 1.9.3
 
 - Fix `Package` constructor not accepting relative `packageUriRoot`.
