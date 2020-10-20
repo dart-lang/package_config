@@ -53,7 +53,6 @@ class SimplePackageConfig implements PackageConfig {
     var packageNames = <String>{};
     var tree = MutablePackageTree();
     for (var originalPackage in packages) {
-
       SimplePackage? package;
       if (originalPackage is! SimplePackage) {
         // SimplePackage validates these properties.
