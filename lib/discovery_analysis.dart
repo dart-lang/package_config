@@ -62,10 +62,10 @@ abstract class PackageContext {
     if (!directory.existsSync()) {
       throw ArgumentError("Directory not found: $directory");
     }
-    var contexts = <PackageContext>[];
+    List<PackageContext>? contexts = <PackageContext>[];
     void findRoots(Directory directory) {
-      Packages packages;
-      List<PackageContext> oldContexts;
+      Packages? packages;
+      List<PackageContext>? oldContexts;
       var packagesFile = File(path.join(directory.path, ".packages"));
       if (packagesFile.existsSync()) {
         packages = _loadPackagesFile(packagesFile);
@@ -87,17 +87,17 @@ abstract class PackageContext {
         }
       }
       if (packages != null) {
-        oldContexts.add(_PackageContext(directory, packages, contexts));
+        oldContexts!.add(_PackageContext(directory, packages, contexts!));
         contexts = oldContexts;
       }
     }
 
     findRoots(directory);
     // If the root is not itself context root, add a the wrapper context.
-    if (contexts.length == 1 && contexts[0].directory == directory) {
-      return contexts[0];
+    if (contexts!.length == 1 && contexts![0].directory == directory) {
+      return contexts![0];
     }
-    return _PackageContext(directory, root, contexts);
+    return _PackageContext(directory, root, contexts!);
   }
 }
 
@@ -113,7 +113,7 @@ class _PackageContext implements PackageContext {
     void recurse(_PackageContext current) {
       result[current.directory] = current.packages;
       for (var child in current.children) {
-        recurse(child);
+        recurse(child as _PackageContext);
       }
     }
 

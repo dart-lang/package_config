@@ -2,6 +2,7 @@
 .pub
 .dart_tool/
 .vscode/
+.idea/
 packages
 pubspec.lock
 doc/api/

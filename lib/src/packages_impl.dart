@@ -17,7 +17,7 @@ import "util.dart" show checkValidPackageUri;
 class NoPackages implements Packages {
   const NoPackages();
 
-  Uri resolve(Uri packageUri, {Uri notFound(Uri packageUri)}) {
+  Uri resolve(Uri packageUri, {Uri notFound(Uri packageUri)?}) {
     var packageName = checkValidPackageUri(packageUri, "packageUri");
     if (notFound != null) return notFound(packageUri);
     throw ArgumentError.value(
@@ -28,11 +28,11 @@ class NoPackages implements Packages {
 
   Map<String, Uri> asMap() => const <String, Uri>{};
 
-  String get defaultPackageName => null;
+  String? get defaultPackageName => null;
 
-  String packageMetadata(String packageName, String key) => null;
+  String? packageMetadata(String packageName, String key) => null;
 
-  String libraryMetadata(Uri libraryUri, String key) => null;
+  String? libraryMetadata(Uri libraryUri, String key) => null;
 }
 
 /// Base class for [Packages] implementations.
@@ -40,7 +40,7 @@ class NoPackages implements Packages {
 /// This class implements the [resolve] method in terms of a private
 /// member
 abstract class PackagesBase implements Packages {
-  Uri resolve(Uri packageUri, {Uri notFound(Uri packageUri)}) {
+  Uri resolve(Uri packageUri, {Uri notFound(Uri packageUri)?}) {
     packageUri = packageUri.normalizePath();
     var packageName = checkValidPackageUri(packageUri, "packageUri");
     var packageBase = getBase(packageName);
@@ -57,13 +57,13 @@ abstract class PackagesBase implements Packages {
   ///
   /// Returns `null` if no package exists with that name, and that can be
   /// determined.
-  Uri getBase(String packageName);
+  Uri? getBase(String packageName);
 
-  String get defaultPackageName => null;
+  String? get defaultPackageName => null;
 
-  String packageMetadata(String packageName, String key) => null;
+  String? packageMetadata(String packageName, String key) => null;
 
-  String libraryMetadata(Uri libraryUri, String key) => null;
+  String? libraryMetadata(Uri libraryUri, String key) => null;
 }
 
 /// A [Packages] implementation based on an existing map.
@@ -71,16 +71,16 @@ class MapPackages extends PackagesBase {
   final Map<String, Uri> _mapping;
   MapPackages(this._mapping);
 
-  Uri getBase(String packageName) =>
+  Uri? getBase(String packageName) =>
       packageName.isEmpty ? null : _mapping[packageName];
 
   Iterable<String> get packages => _mapping.keys;
 
   Map<String, Uri> asMap() => UnmodifiableMapView<String, Uri>(_mapping);
 
-  String get defaultPackageName => _mapping[""]?.toString();
+  String? get defaultPackageName => _mapping[""]?.toString();
 
-  String packageMetadata(String packageName, String key) {
+  String? packageMetadata(String packageName, String key) {
     if (packageName.isEmpty) return null;
     var uri = _mapping[packageName];
     if (uri == null || !uri.hasFragment) return null;
@@ -89,7 +89,7 @@ class MapPackages extends PackagesBase {
     return Uri.splitQueryString(uri.fragment)[key];
   }
 
-  String libraryMetadata(Uri libraryUri, String key) {
+  String? libraryMetadata(Uri libraryUri, String key) {
     if (libraryUri.isScheme("package")) {
       return packageMetadata(libraryUri.pathSegments.first, key);
     }

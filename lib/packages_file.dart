@@ -112,7 +112,7 @@ Map<String, Uri> parse(List<int> source, Uri baseLocation,
 /// All the keys of [packageMapping] must be valid package names,
 /// and the values must be URIs that do not have the `package:` scheme.
 void write(StringSink output, Map<String, Uri> packageMapping,
-    {Uri baseUri, String comment, bool allowDefaultPackage = false}) {
+    {Uri? baseUri, String? comment, bool allowDefaultPackage = false}) {
   ArgumentError.checkNotNull(allowDefaultPackage, 'allowDefaultPackage');
 
   if (baseUri != null && !baseUri.isAbsolute) {

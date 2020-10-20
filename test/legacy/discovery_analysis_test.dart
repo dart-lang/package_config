@@ -101,7 +101,7 @@ Uri pkg(String packageName, String packagePath) {
 /// it's a sub-dir, otherwise it's a file and the value is the content
 /// as a string.
 void fileTest(
-    String name, Map description, Future fileTest(Directory directory)) {
+    String name, Map description, Future? fileTest(Directory directory)) {
   group("file-test", () {
     var tempDir = Directory.systemTemp.createTempSync("file-test");
     setUp(() {

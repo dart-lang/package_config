@@ -120,8 +120,8 @@ void main() {
 
 String writeToString(
   Map<String, Uri> map, {
-  Uri baseUri,
-  String comment,
+  Uri? baseUri,
+  String? comment,
   bool allowDefaultPackage = false,
 }) {
   var buffer = StringBuffer();

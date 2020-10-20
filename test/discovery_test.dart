@@ -7,6 +7,7 @@ library package_config.discovery_test;
 
 import "dart:io";
 import "package:test/test.dart";
+
 import "package:package_config/package_config.dart";
 
 import "src/util.dart";
@@ -40,8 +41,9 @@ const packageConfigFile = """
 }
 """;
 
-void validatePackagesFile(PackageConfig resolver, Directory directory) {
+void validatePackagesFile(PackageConfig? resolver, Directory directory) {
   expect(resolver, isNotNull);
+  if (resolver == null) return;
   expect(resolver.resolve(pkg("foo", "bar/baz")),
       equals(Uri.parse("file:///dart/packages/foo/bar/baz")));
   expect(resolver.resolve(pkg("bar", "baz/qux")),
@@ -64,7 +66,7 @@ void main() {
       }
     }, (Directory directory) async {
       var config = await findPackageConfig(directory);
-      expect(config.version, 2); // Found package_config.json file.
+      expect(config?.version, 2); // Found package_config.json file.
       validatePackagesFile(config, directory);
     });
 
@@ -75,7 +77,7 @@ void main() {
       "packages": {"shouldNotBeFound": {}}
     }, (Directory directory) async {
       var config = await findPackageConfig(directory);
-      expect(config.version, 1); // Found .packages file.
+      expect(config?.version, 1); // Found .packages file.
       validatePackagesFile(config, directory);
     });
 
@@ -90,7 +92,7 @@ void main() {
       }
     }, (Directory directory) async {
       var config = await findPackageConfig(subdir(directory, "subdir/"));
-      expect(config.version, 2);
+      expect(config?.version, 2);
       validatePackagesFile(config, directory);
     });
 

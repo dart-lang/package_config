@@ -28,7 +28,7 @@ import "src/packages_io_impl.dart";
 /// resolution file, for example one specified using a `--packages`
 /// command-line parameter.
 Future<Packages> loadPackagesFile(Uri packagesFile,
-    {Future<List<int>> loader(Uri uri)}) async {
+    {Future<List<int>> loader(Uri uri)?}) async {
   Packages parseBytes(List<int> bytes) {
     return MapPackages(pkgfile.parse(bytes, packagesFile));
   }
@@ -89,7 +89,7 @@ Packages getPackagesDirectory(Uri packagesDir) {
 /// The content should be a UTF-8 encoded `.packages` file, and must return an
 /// error future if loading fails for any reason.
 Future<Packages> findPackages(Uri baseUri,
-    {Future<List<int>> loader(Uri unsupportedUri)}) {
+    {Future<List<int>> loader(Uri unsupportedUri)?}) {
   if (baseUri.scheme == "file") {
     return Future<Packages>.sync(() => findPackagesFromFile(baseUri));
   } else if (loader != null) {
@@ -110,14 +110,14 @@ Future<Packages> findPackages(Uri baseUri,
 ///
 /// Returns a [File] object of a `.packages` file if one is found, or a
 /// [Directory] object for the `packages/` directory if that is found.
-FileSystemEntity _findPackagesFile(String workingDirectory) {
+FileSystemEntity? _findPackagesFile(String workingDirectory) {
   var dir = Directory(workingDirectory);
   if (!dir.isAbsolute) dir = dir.absolute;
   if (!dir.existsSync()) {
     throw ArgumentError.value(
         workingDirectory, "workingDirectory", "Directory does not exist.");
   }
-  File checkForConfigFile(Directory directory) {
+  File? checkForConfigFile(Directory directory) {
     assert(directory.isAbsolute);
     var file = File(path.join(directory.path, ".packages"));
     if (file.existsSync()) return file;
@@ -166,7 +166,7 @@ Packages findPackagesFromFile(Uri fileBaseUri) {
     return MapPackages(map);
   }
   assert(location is Directory);
-  return FilePackagesDirectoryPackages(location);
+  return FilePackagesDirectoryPackages(location as Directory);
 }
 
 /// Finds a package resolution strategy for a Dart script.
@@ -187,7 +187,7 @@ Packages findPackagesFromFile(Uri fileBaseUri) {
 /// of the requested `.packages` file as bytes, which will be assumed to be
 /// UTF-8 encoded.
 Future<Packages> findPackagesFromNonFile(Uri nonFileUri,
-    {Future<List<int>> loader(Uri name)}) async {
+    {Future<List<int>> loader(Uri name)?}) async {
   loader ??= _httpGet;
   var packagesFileUri = nonFileUri.resolve(".packages");
 

@@ -37,7 +37,7 @@ abstract class Packages {
   /// If no `notFound` function is provided, it defaults to throwing an error.
   ///
   /// The [packageUri] must be a valid package URI.
-  Uri resolve(Uri packageUri, {Uri notFound(Uri packageUri)});
+  Uri resolve(Uri packageUri, {Uri notFound(Uri packageUri)?});
 
   /// Return the names of the available packages.
   ///
@@ -58,7 +58,7 @@ abstract class Packages {
   ///
   /// Not all `Packages` objects can support metadata.
   /// Those will always return `null`.
-  String packageMetadata(String packageName, String key);
+  String? packageMetadata(String packageName, String key);
 
   /// Retrieve metadata associated with a library.
   ///
@@ -71,7 +71,7 @@ abstract class Packages {
   /// up on the default package instead.
   ///
   /// Otherwise the result is `null`.
-  String libraryMetadata(Uri libraryUri, String key);
+  String? libraryMetadata(Uri libraryUri, String key);
 
   /// Return the names-to-base-URI mapping of the available packages.
   ///
@@ -92,5 +92,5 @@ abstract class Packages {
   /// The value is `null` if there is no default package.
   /// Not all implementations of [Packages] supports a default package,
   /// and will always have a `null` value for those.
-  String get defaultPackageName;
+  String? get defaultPackageName;
 }

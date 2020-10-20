@@ -33,13 +33,13 @@ const String _generatorVersionKey = "generatorVersion";
 final _jsonUtf8Decoder = json.fuse(utf8).decoder;
 
 PackageConfig parsePackageConfigBytes(
-    Uint8List bytes, Uri file, void onError(Object error)) {
+    Uint8List bytes, Uri file, void onError(Object error)?) {
   // TODO(lrn): Make this simpler. Maybe parse directly from bytes.
   var jsonObject;
   try {
     jsonObject = _jsonUtf8Decoder.convert(bytes);
   } on FormatException catch (e) {
-    onError(PackageConfigFormatException.from(e));
+    onError!(PackageConfigFormatException.from(e));
     return const SimplePackageConfig.empty();
   }
   return parsePackageConfigJson(jsonObject, file, onError);
@@ -80,7 +80,7 @@ PackageConfig parsePackageConfigString(
 /// The [baseLocation] is used as base URI to resolve the "rootUri"
 /// URI referencestring.
 PackageConfig parsePackageConfigJson(
-    dynamic json, Uri baseLocation, void onError(Object error)) {
+    dynamic json, Uri baseLocation, void onError(Object error)?) {
   if (!baseLocation.hasScheme || baseLocation.isScheme("package")) {
     throw PackageConfigArgumentError(baseLocation.toString(), "baseLocation",
         "Must be an absolute non-package: URI");
@@ -97,23 +97,23 @@ PackageConfig parsePackageConfigJson(
     return "object";
   }
 
-  T checkType<T>(dynamic value, String name, [String /*?*/ packageName]) {
+  T? checkType<T>(dynamic value, String name, [String? packageName]) {
     if (value is T) return value;
     // The only types we are called with are [int], [String], [List<dynamic>]
     // and Map<String, dynamic>. Recognize which to give a better error message.
     var message =
         "$name${packageName != null ? " of package $packageName" : ""}"
         " is not a JSON ${typeName<T>()}";
-    onError(PackageConfigFormatException(message, value));
+    onError!(PackageConfigFormatException(message, value));
     return null;
   }
 
-  Package /*?*/ parsePackage(Map<String, dynamic> entry) {
-    String /*?*/ name;
-    String /*?*/ rootUri;
-    String /*?*/ packageUri;
-    String /*?*/ languageVersion;
-    Map<String, dynamic> /*?*/ extraData;
+  Package? parsePackage(Map<String, dynamic> entry) {
+    String? name;
+    String? rootUri;
+    String? packageUri;
+    String? languageVersion;
+    Map<String, dynamic>? extraData;
     var hasName = false;
     var hasRoot = false;
     var hasVersion = false;
@@ -140,43 +140,43 @@ PackageConfig parsePackageConfigJson(
       }
     });
     if (!hasName) {
-      onError(PackageConfigFormatException("Missing name entry", entry));
+      onError!(PackageConfigFormatException("Missing name entry", entry));
     }
     if (!hasRoot) {
-      onError(PackageConfigFormatException("Missing rootUri entry", entry));
+      onError!(PackageConfigFormatException("Missing rootUri entry", entry));
     }
     if (name == null || rootUri == null) return null;
-    var root = baseLocation.resolve(rootUri);
+    var root = baseLocation.resolve(rootUri!);
     if (!root.path.endsWith("/")) root = root.replace(path: root.path + "/");
     var packageRoot = root;
-    if (packageUri != null) packageRoot = root.resolve(packageUri);
+    if (packageUri != null) packageRoot = root.resolve(packageUri!);
     if (!packageRoot.path.endsWith("/")) {
       packageRoot = packageRoot.replace(path: packageRoot.path + "/");
     }
 
-    LanguageVersion /*?*/ version;
+    LanguageVersion? version;
     if (languageVersion != null) {
       version = parseLanguageVersion(languageVersion, onError);
     } else if (hasVersion) {
       version = SimpleInvalidLanguageVersion("invalid");
     }
 
-    return SimplePackage.validate(name, root, packageRoot, version, extraData,
+    return SimplePackage.validate(name!, root, packageRoot, version, extraData,
         (error) {
       if (error is ArgumentError) {
-        onError(
+        onError!(
             PackageConfigFormatException(error.message, error.invalidValue));
       } else {
-        onError(error);
+        onError!(error);
       }
     });
   }
 
   var map = checkType<Map<String, dynamic>>(json, "value");
   if (map == null) return const SimplePackageConfig.empty();
-  Map<String, dynamic> /*?*/ extraData;
-  List<Package> /*?*/ packageList;
-  int /*?*/ configVersion;
+  Map<String, dynamic>? extraData;
+  List<Package>? packageList;
+  int? configVersion;
   map.forEach((key, value) {
     switch (key) {
       case _configVersionKey:
@@ -203,18 +203,18 @@ PackageConfig parsePackageConfigJson(
     }
   });
   if (configVersion == null) {
-    onError(PackageConfigFormatException("Missing configVersion entry", json));
+    onError!(PackageConfigFormatException("Missing configVersion entry", json));
     configVersion = 2;
   }
   if (packageList == null) {
-    onError(PackageConfigFormatException("Missing packages list", json));
+    onError!(PackageConfigFormatException("Missing packages list", json));
     packageList = [];
   }
-  return SimplePackageConfig(configVersion, packageList, extraData, (error) {
+  return SimplePackageConfig(configVersion!, packageList!, extraData, (error) {
     if (error is ArgumentError) {
-      onError(PackageConfigFormatException(error.message, error.invalidValue));
+      onError!(PackageConfigFormatException(error.message, error.invalidValue));
     } else {
-      onError(error);
+      onError!(error);
     }
   });
 }
@@ -222,20 +222,20 @@ PackageConfig parsePackageConfigJson(
 final _jsonUtf8Encoder = JsonUtf8Encoder("  ");
 
 void writePackageConfigJsonUtf8(
-    PackageConfig config, Uri baseUri, Sink<List<int>> output) {
+    PackageConfig config, Uri? baseUri, Sink<List<int>> output) {
   // Can be optimized.
   var data = packageConfigToJson(config, baseUri);
   output.add(_jsonUtf8Encoder.convert(data) as Uint8List);
 }
 
 void writePackageConfigJsonString(
-    PackageConfig config, Uri baseUri, StringSink output) {
+    PackageConfig config, Uri? baseUri, StringSink output) {
   // Can be optimized.
   var data = packageConfigToJson(config, baseUri);
   output.write(JsonEncoder.withIndent("  ").convert(data) as Uint8List);
 }
 
-Map<String, dynamic> packageConfigToJson(PackageConfig config, Uri baseUri) =>
+Map<String, dynamic> packageConfigToJson(PackageConfig config, Uri? baseUri) =>
     <String, dynamic>{
       ...?_extractExtraData(config.extraData, _topNames),
       _configVersionKey: PackageConfig.maxVersion,
@@ -259,12 +259,12 @@ Map<String, dynamic> packageConfigToJson(PackageConfig config, Uri baseUri) =>
 void writeDotPackages(PackageConfig config, Uri baseUri, StringSink output) {
   var extraData = config.extraData;
   // Write .packages too.
-  String /*?*/ comment;
+  String? comment;
   if (extraData != null) {
-    String /*?*/ generator = extraData[_generatorKey];
+    String? generator = extraData[_generatorKey];
     if (generator != null) {
-      String /*?*/ generated = extraData[_generatedKey];
-      String /*?*/ generatorVersion = extraData[_generatorVersionKey];
+      String? generated = extraData[_generatedKey];
+      String? generatorVersion = extraData[_generatorVersionKey];
       comment = "Generated by $generator"
           "${generatorVersion != null ? " $generatorVersion" : ""}"
           "${generated != null ? " on $generated" : ""}.";
@@ -277,7 +277,7 @@ void writeDotPackages(PackageConfig config, Uri baseUri, StringSink output) {
 ///
 /// If the value contains any of the [reservedNames] for the current context,
 /// entries with that name in the extra data are dropped.
-Map<String, dynamic> /*?*/ _extractExtraData(
+Map<String, dynamic>? _extractExtraData(
     dynamic data, Iterable<String> reservedNames) {
   if (data is Map<String, dynamic>) {
     if (data.isEmpty) return null;

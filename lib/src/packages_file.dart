@@ -31,9 +31,9 @@ final LanguageVersion _languageVersion = LanguageVersion(2, 7);
 /// [Package.packageUriRoot] is the same as its [Package.root]
 /// and it has no [Package.languageVersion].
 PackageConfig parse(
-    List<int> source, Uri baseLocation, void onError(Object error)) {
+    List<int> source, Uri baseLocation, void onError(Object error)?) {
   if (baseLocation.isScheme("package")) {
-    onError(PackageConfigArgumentError(
+    onError!(PackageConfigArgumentError(
         baseLocation, "baseLocation", "Must not be a package: URI"));
     return PackageConfig.empty;
   }
@@ -50,7 +50,7 @@ PackageConfig parse(
       continue;
     }
     if (char == $colon) {
-      onError(PackageConfigFormatException(
+      onError!(PackageConfigFormatException(
           "Missing package name", source, index - 1));
       ignoreLine = true; // Ignore if package name is invalid.
     } else {
@@ -73,23 +73,23 @@ PackageConfig parse(
     }
     if (ignoreLine) continue;
     if (separatorIndex < 0) {
-      onError(
+      onError!(
           PackageConfigFormatException("No ':' on line", source, index - 1));
       continue;
     }
     var packageName = String.fromCharCodes(source, start, separatorIndex);
     var invalidIndex = checkPackageName(packageName);
     if (invalidIndex >= 0) {
-      onError(PackageConfigFormatException(
+      onError!(PackageConfigFormatException(
           "Not a valid package name", source, start + invalidIndex));
       continue;
     }
     if (queryStart >= 0) {
-      onError(PackageConfigFormatException(
+      onError!(PackageConfigFormatException(
           "Location URI must not have query", source, queryStart));
       end = queryStart;
     } else if (fragmentStart >= 0) {
-      onError(PackageConfigFormatException(
+      onError!(PackageConfigFormatException(
           "Location URI must not have fragment", source, fragmentStart));
       end = fragmentStart;
     }
@@ -98,11 +98,11 @@ PackageConfig parse(
     try {
       packageLocation = baseLocation.resolve(packageValue);
     } on FormatException catch (e) {
-      onError(PackageConfigFormatException.from(e));
+      onError!(PackageConfigFormatException.from(e));
       continue;
     }
     if (packageLocation.isScheme("package")) {
-      onError(PackageConfigFormatException(
+      onError!(PackageConfigFormatException(
           "Package URI as location for package", source, separatorIndex + 1));
       continue;
     }
@@ -112,7 +112,7 @@ PackageConfig parse(
       packageLocation = packageLocation.replace(path: path);
     }
     if (packageNames.contains(packageName)) {
-      onError(PackageConfigFormatException(
+      onError!(PackageConfigFormatException(
           "Same package name occured more than once", source, start));
       continue;
     }
@@ -125,9 +125,9 @@ PackageConfig parse(
     var package = SimplePackage.validate(
         packageName, rootUri, packageLocation, _languageVersion, null, (error) {
       if (error is ArgumentError) {
-        onError(PackageConfigFormatException(error.message, source));
+        onError!(PackageConfigFormatException(error.message, source));
       } else {
-        onError(error);
+        onError!(error);
       }
     });
     if (package != null) {
@@ -154,7 +154,7 @@ PackageConfig parse(
 /// All the keys of [packageMapping] must be valid package names,
 /// and the values must be URIs that do not have the `package:` scheme.
 void write(StringSink output, PackageConfig config,
-    {Uri baseUri, String comment}) {
+    {Uri? baseUri, String? comment}) {
   if (baseUri != null && !baseUri.isAbsolute) {
     throw PackageConfigArgumentError(baseUri, "baseUri", "Must be absolute");
   }
@@ -173,7 +173,7 @@ void write(StringSink output, PackageConfig config,
   }
   for (var package in config.packages) {
     var packageName = package.name;
-    var uri = package.packageUriRoot;
+    var uri = package.packageUriRoot!;
     // Validate packageName.
     if (!isValidPackageName(packageName)) {
       throw PackageConfigArgumentError(
@@ -187,7 +187,7 @@ void write(StringSink output, PackageConfig config,
     output.write(':');
     // If baseUri is provided, make the URI relative to baseUri.
     if (baseUri != null) {
-      uri = relativizeUri(uri, baseUri);
+      uri = relativizeUri(uri, baseUri)!;
     }
     if (!uri.path.endsWith('/')) {
       uri = uri.replace(path: uri.path + '/');

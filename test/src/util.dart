@@ -2,6 +2,7 @@
 // for details. All rights reserved. Use of this source code is governed by a
 // BSD-style license that can be found in the LICENSE file.
 
+import 'dart:async';
 import 'dart:convert';
 import 'dart:typed_data';
 
@@ -34,9 +35,9 @@ ${packages.map((nu) => """
 /// it's a subdirectory, otherwise it's a file and the value is the content
 /// as a string.
 void loaderTest(String name, Map<String, Object> description,
-    void loaderTest(Uri root, Future<Uint8List> loader(Uri uri))) {
+    void loaderTest(Uri root, Future<Uint8List?> loader(Uri uri))) {
   var root = Uri(scheme: "test", path: "/");
-  Future<Uint8List> loader(Uri uri) async {
+  Future<Uint8List?> loader(Uri uri) async {
     var path = uri.path;
     if (!uri.isScheme("test") || !path.startsWith("/")) return null;
     var parts = path.split("/");
@@ -45,7 +46,7 @@ void loaderTest(String name, Map<String, Object> description,
       if (value is! Map<String, dynamic>) return null;
       value = value[parts[i]];
     }
-    if (value is String) return utf8.encode(value);
+    if (value is String) return utf8.encode(value) as FutureOr<Uint8List?>;
     return null;
   }
 

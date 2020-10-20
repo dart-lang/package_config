@@ -9,3 +9,5 @@ analyzer:
     curly_braces_in_flow_control_structures: ignore
     prefer_single_quotes: ignore
     use_function_type_syntax_for_parameters: ignore
+  enable-experiment:
+    - non-nullable

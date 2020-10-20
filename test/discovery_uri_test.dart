@@ -38,8 +38,9 @@ const packageConfigFile = """
 }
 """;
 
-void validatePackagesFile(PackageConfig resolver, Uri directory) {
+void validatePackagesFile(PackageConfig? resolver, Uri directory) {
   expect(resolver, isNotNull);
+  if (resolver == null) return;
   expect(resolver.resolve(pkg("foo", "bar/baz")),
       equals(Uri.parse("file:///dart/packages/foo/bar/baz")));
   expect(resolver.resolve(pkg("bar", "baz/qux")),
@@ -62,7 +63,7 @@ void main() {
       }
     }, (directory, loader) async {
       var config = await findPackageConfigUri(directory, loader: loader);
-      expect(config.version, 2); // Found package_config.json file.
+      expect(config?.version, 2); // Found package_config.json file.
       validatePackagesFile(config, directory);
     });
 
@@ -73,7 +74,7 @@ void main() {
       "packages": {"shouldNotBeFound": {}}
     }, (directory, loader) async {
       var config = await findPackageConfigUri(directory, loader: loader);
-      expect(config.version, 1); // Found .packages file.
+      expect(config?.version, 1); // Found .packages file.
       validatePackagesFile(config, directory);
     });
 
@@ -89,7 +90,7 @@ void main() {
     }, (directory, loader) async {
       var config = await findPackageConfigUri(directory.resolve("subdir/"),
           loader: loader);
-      expect(config.version, 2);
+      expect(config?.version, 2);
       validatePackagesFile(config, directory);
     });
 

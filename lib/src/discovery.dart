@@ -32,8 +32,8 @@ final Uri parentPath = Uri(path: "..");
 /// If any of these tests succeed, a `PackageConfig` class is returned.
 /// Returns `null` if no configuration was found. If a configuration
 /// is needed, then the caller can supply [PackageConfig.empty].
-Future<PackageConfig /*?*/ > findPackageConfig(
-    Directory baseDirectory, bool recursive, void onError(Object error)) async {
+Future<PackageConfig?> findPackageConfig(Directory baseDirectory,
+    bool recursive, void onError(Object error)?) async {
   var directory = baseDirectory;
   if (!directory.isAbsolute) directory = directory.absolute;
   if (!await directory.exists()) {
@@ -53,13 +53,13 @@ Future<PackageConfig /*?*/ > findPackageConfig(
 }
 
 /// Similar to [findPackageConfig] but based on a URI.
-Future<PackageConfig /*?*/ > findPackageConfigUri(
+Future<PackageConfig?> findPackageConfigUri(
     Uri location,
-    Future<Uint8List /*?*/ > loader(Uri uri) /*?*/,
-    void onError(Object error) /*?*/,
+    Future<Uint8List?> loader(Uri uri)?,
+    void onError(Object error)?,
     bool recursive) async {
   if (location.isScheme("package")) {
-    onError(PackageConfigArgumentError(
+    onError!(PackageConfigArgumentError(
         location, "location", "Must not be a package: URI"));
     return null;
   }
@@ -102,8 +102,8 @@ Future<PackageConfig /*?*/ > findPackageConfigUri(
 /// If [onError] is supplied, parsing errors are reported using that, and
 /// a best-effort attempt is made to return a package configuration.
 /// This may be the empty package configuration.
-Future<PackageConfig /*?*/ > findPackagConfigInDirectory(
-    Directory directory, void onError(Object error)) async {
+Future<PackageConfig?> findPackagConfigInDirectory(
+    Directory directory, void onError(Object error)?) async {
   var packageConfigFile = await checkForPackageConfigJsonFile(directory);
   if (packageConfigFile != null) {
     return await readPackageConfigJsonFile(packageConfigFile, onError);
@@ -115,7 +115,7 @@ Future<PackageConfig /*?*/ > findPackagConfigInDirectory(
   return null;
 }
 
-Future<File> /*?*/ checkForPackageConfigJsonFile(Directory directory) async {
+Future<File?>? checkForPackageConfigJsonFile(Directory directory) async {
   assert(directory.isAbsolute);
   var file =
       File(pathJoin(directory.path, ".dart_tool", "package_config.json"));
@@ -123,7 +123,7 @@ Future<File> /*?*/ checkForPackageConfigJsonFile(Directory directory) async {
   return null;
 }
 
-Future<File /*?*/ > checkForDotPackagesFile(Directory directory) async {
+Future<File?> checkForDotPackagesFile(Directory directory) async {
   var file = File(pathJoin(directory.path, ".packages"));
   if (await file.exists()) return file;
   return null;

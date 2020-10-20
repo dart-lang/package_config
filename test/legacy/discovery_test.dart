@@ -62,33 +62,36 @@ void main() {
     ".packages": packagesFile,
     "script.dart": "main(){}",
     "packages": {"shouldNotBeFound": {}}
-  }, (Uri location) async {
+  }, (Uri? location) async {
     Packages resolver;
-    resolver = await findPackages(location);
+    resolver = await findPackages(location!);
     validatePackagesFile(resolver, location);
     resolver = await findPackages(location.resolve("script.dart"));
     validatePackagesFile(resolver, location);
     var specificDiscovery = (location.scheme == "file")
         ? findPackagesFromFile
         : findPackagesFromNonFile;
-    resolver = await specificDiscovery(location);
+    resolver = await (specificDiscovery(location) as FutureOr<Packages>);
     validatePackagesFile(resolver, location);
-    resolver = await specificDiscovery(location.resolve("script.dart"));
+    resolver = await (specificDiscovery(location.resolve("script.dart"))
+        as FutureOr<Packages>);
     validatePackagesFile(resolver, location);
   });
 
   generalTest("packages/", {
     "packages": {"foo": {}, "bar": {}, "baz": {}},
     "script.dart": "main(){}"
-  }, (Uri location) async {
+  }, (Uri? location) async {
     Packages resolver;
-    var isFile = (location.scheme == "file");
+    var isFile = (location!.scheme == "file");
     resolver = await findPackages(location);
     validatePackagesDir(resolver, location);
     resolver = await findPackages(location.resolve("script.dart"));
     validatePackagesDir(resolver, location);
-    var specificDiscovery =
-        isFile ? findPackagesFromFile : findPackagesFromNonFile;
+    var specificDiscovery = (isFile
+        ? findPackagesFromFile
+        : findPackagesFromNonFile) as FutureOr<Packages> Function(Uri);
+
     resolver = await specificDiscovery(location);
     validatePackagesDir(resolver, location);
     resolver = await specificDiscovery(location.resolve("script.dart"));
@@ -97,8 +100,8 @@ void main() {
 
   generalTest("underscore packages", {
     "packages": {"_foo": {}}
-  }, (Uri location) async {
-    var resolver = await findPackages(location);
+  }, (Uri? location) async {
+    var resolver = await findPackages(location!);
     expect(resolver.resolve(pkg("_foo", "foo.dart")),
         equals(location.resolve("packages/_foo/foo.dart")));
   });
@@ -122,9 +125,9 @@ void main() {
   httpTest(".packages not recursive", {
     ".packages": packagesFile,
     "subdir": {"script.dart": "main(){}"}
-  }, (Uri location) async {
+  }, (Uri? location) async {
     Packages resolver;
-    var subdir = location.resolve("subdir/");
+    var subdir = location!.resolve("subdir/");
     resolver = await findPackages(subdir);
     validatePackagesDir(resolver, subdir);
     resolver = await findPackages(subdir.resolve("script.dart"));
@@ -149,11 +152,11 @@ void main() {
     expect(resolver, same(Packages.noPackages));
   });
 
-  httpTest("no packages", {"script.dart": "main(){}"}, (Uri location) async {
+  httpTest("no packages", {"script.dart": "main(){}"}, (Uri? location) async {
     // A non-file: location with no .packages or packages/:
     // Assumes a packages dir exists, and resolves relative to that.
     Packages resolver;
-    resolver = await findPackages(location);
+    resolver = await findPackages(location!);
     validatePackagesDir(resolver, location);
     resolver = await findPackages(location.resolve("script.dart"));
     validatePackagesDir(resolver, location);
@@ -209,16 +212,16 @@ void main() {
   });
 
   generalTest("loadPackagesFile", {".packages": packagesFile},
-      (Uri directory) async {
-    var file = directory.resolve(".packages");
+      (Uri? directory) async {
+    var file = directory!.resolve(".packages");
     var resolver = await loadPackagesFile(file);
     validatePackagesFile(resolver, file);
   });
 
   generalTest(
       "loadPackagesFile non-default name", {"pheldagriff": packagesFile},
-      (Uri directory) async {
-    var file = directory.resolve("pheldagriff");
+      (Uri? directory) async {
+    var file = directory!.resolve("pheldagriff");
     var resolver = await loadPackagesFile(file);
     validatePackagesFile(resolver, file);
   });
@@ -230,8 +233,8 @@ void main() {
     validatePackagesFile(resolver, file);
   });
 
-  generalTest("loadPackagesFile not found", {}, (Uri directory) async {
-    var file = directory.resolve(".packages");
+  generalTest("loadPackagesFile not found", {}, (Uri? directory) async {
+    var file = directory!.resolve(".packages");
     expect(
         loadPackagesFile(file),
         throwsA(anyOf(
@@ -239,15 +242,15 @@ void main() {
   });
 
   generalTest("loadPackagesFile syntax error", {".packages": "syntax error"},
-      (Uri directory) async {
-    var file = directory.resolve(".packages");
+      (Uri? directory) async {
+    var file = directory!.resolve(".packages");
     expect(loadPackagesFile(file), throwsFormatException);
   });
 
   generalTest("getPackagesDir", {
     "packages": {"foo": {}, "bar": {}, "baz": {}}
-  }, (Uri directory) async {
-    var packages = directory.resolve("packages/");
+  }, (Uri? directory) async {
+    var packages = directory!.resolve("packages/");
     var resolver = getPackagesDirectory(packages);
     var resolved = resolver.resolve(pkg("foo", "flip/flop"));
     expect(resolved, packages.resolve("foo/flip/flop"));
@@ -277,9 +280,9 @@ void fileTest(String name, Map description, Future fileTest(Uri directory)) {
 /// Description is a map, each key is a file entry. If the value is a map,
 /// it's a sub-dir, otherwise it's a file and the value is the content
 /// as a string.
-void httpTest(String name, Map description, Future httpTest(Uri directory)) {
+void httpTest(String name, Map description, Future httpTest(Uri? directory)) {
   group("http-test", () {
-    var serverSub;
+    late var serverSub;
     var uri;
     setUp(() {
       return HttpServer.bind(InternetAddress.loopbackIPv4, 0).then((server) {
@@ -310,7 +313,7 @@ void httpTest(String name, Map description, Future httpTest(Uri directory)) {
   });
 }
 
-void generalTest(String name, Map description, Future action(Uri location)) {
+void generalTest(String name, Map description, Future action(Uri? location)) {
   fileTest(name, description, action);
   httpTest(name, description, action);
 }
