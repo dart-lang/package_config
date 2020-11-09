@@ -49,7 +49,7 @@ Future<PackageConfig> readAnyConfigFile(
 /// Like [readAnyConfigFile] but uses a URI and an optional loader.
 Future<PackageConfig> readAnyConfigFileUri(
     Uri file,
-    Future<Uint8List /*?*/ > loader(Uri uri) /*?*/,
+    Future<Uint8List?> loader(Uri uri)?,
     void onError(Object error),
     bool preferNewest) async {
   if (file.isScheme("package")) {
@@ -64,7 +64,7 @@ Future<PackageConfig> readAnyConfigFileUri(
   }
   if (preferNewest && file.pathSegments.last == ".packages") {
     var alternateFile = file.resolve(".dart_tool/package_config.json");
-    Uint8List /*?*/ bytes;
+    Uint8List? bytes;
     try {
       bytes = await loader(alternateFile);
     } catch (e) {
@@ -75,7 +75,7 @@ Future<PackageConfig> readAnyConfigFileUri(
       return parsePackageConfigBytes(bytes, alternateFile, onError);
     }
   }
-  Uint8List /*?*/ bytes;
+  Uint8List? bytes;
   try {
     bytes = await loader(file);
   } catch (e) {

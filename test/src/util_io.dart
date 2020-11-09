@@ -48,7 +48,7 @@ void _createFiles(Directory target, Map<Object, Object> description) {
     if (content is Map<Object, Object>) {
       _createFiles(Directory(entryName)..createSync(), content);
     } else {
-      File(entryName).writeAsStringSync(content, flush: true);
+      File(entryName).writeAsStringSync(content as String, flush: true);
     }
   });
 }
