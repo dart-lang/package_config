@@ -40,9 +40,9 @@ void loaderTest(String name, Map<String, Object> description,
     var path = uri.path;
     if (!uri.isScheme("test") || !path.startsWith("/")) return null;
     var parts = path.split("/");
-    dynamic value = description;
+    Object? value = description;
     for (var i = 1; i < parts.length; i++) {
-      if (value is! Map<String, dynamic>) return null;
+      if (value is! Map<String, Object?>) return null;
       value = value[parts[i]];
     }
     if (value is String) return utf8.encode(value) as Uint8List;

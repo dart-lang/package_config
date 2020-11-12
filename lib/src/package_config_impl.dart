@@ -14,10 +14,10 @@ class SimplePackageConfig implements PackageConfig {
   final int version;
   final Map<String, Package> _packages;
   final PackageTree _packageTree;
-  final dynamic extraData;
+  final Object? extraData;
 
   factory SimplePackageConfig(int version, Iterable<Package> packages,
-      [dynamic extraData, void onError(Object error)?]) {
+      [Object? extraData, void onError(Object error)?]) {
     onError ??= throwError;
     var validVersion = _validateVersion(version, onError);
     var sortedPackages = [...packages]..sort(_compareRoot);
@@ -158,7 +158,7 @@ class SimplePackage implements Package {
   final Uri root;
   final Uri? packageUriRoot;
   final LanguageVersion? languageVersion;
-  final dynamic extraData;
+  final Object? extraData;
 
   SimplePackage._(this.name, this.root, this.packageUriRoot,
       this.languageVersion, this.extraData);
@@ -183,7 +183,7 @@ class SimplePackage implements Package {
       Uri root,
       Uri? packageUriRoot,
       LanguageVersion? languageVersion,
-      dynamic extraData,
+      Object? extraData,
       void onError(Object error)) {
     var fatalError = false;
     var invalidIndex = checkPackageName(name);

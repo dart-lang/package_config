@@ -56,7 +56,7 @@ Future<PackageConfig?> findPackageConfig(
 Future<PackageConfig?> findPackageConfigUri(
     Uri location,
     Future<Uint8List?> loader(Uri uri)?,
-    void onError(Object error) /*!*/,
+    void onError(Object error),
     bool recursive) async {
   if (location.isScheme("package")) {
     onError(PackageConfigArgumentError(

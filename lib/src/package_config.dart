@@ -50,7 +50,7 @@ abstract class PackageConfig {
   /// [PackageConfig.extraData] of the created configuration.
   ///
   /// The version of the resulting configuration is always [maxVersion].
-  factory PackageConfig(Iterable<Package> packages, {dynamic extraData}) =>
+  factory PackageConfig(Iterable<Package> packages, {Object? extraData}) =>
       SimplePackageConfig(maxVersion, packages, extraData);
 
   /// Parses a package configuration file.
@@ -110,7 +110,7 @@ abstract class PackageConfig {
   /// despite the error. The input must still be valid JSON.
   /// The result may be a [PackageConfig.empty] if there is no way to
   /// extract useful information from the bytes.
-  static PackageConfig parseJson(dynamic jsonData, Uri baseUri,
+  static PackageConfig parseJson(Object? jsonData, Uri baseUri,
           {void onError(Object error)?}) =>
       parsePackageConfigJson(jsonData, baseUri, onError ?? throwError);
 
@@ -136,7 +136,7 @@ abstract class PackageConfig {
   ///
   /// If [baseUri] is provided, URI references in the generated data
   /// will be made relative to [baseUri] where possible.
-  static Map<String, dynamic> toJson(PackageConfig configuration,
+  static Map<String, Object?> toJson(PackageConfig configuration,
           [Uri? baseUri]) =>
       packageConfigToJson(configuration, baseUri);
 
@@ -206,7 +206,7 @@ abstract class PackageConfig {
   /// The data may be in any format, depending on who introduced it.
   /// The standard `packjage_config.json` file storage will only store
   /// JSON-like list/map data structures.
-  dynamic get extraData;
+  Object? get extraData;
 }
 
 /// Configuration data for a single package.
@@ -229,7 +229,7 @@ abstract class Package {
   factory Package(String name, Uri root,
           {Uri? packageUriRoot,
           LanguageVersion? languageVersion,
-          dynamic extraData}) =>
+          Object? extraData}) =>
       SimplePackage.validate(
           name, root, packageUriRoot, languageVersion, extraData, throwError)!;
 
@@ -270,7 +270,7 @@ abstract class Package {
   /// The data may be in any format, depending on who introduced it.
   /// The standard `packjage_config.json` file storage will only store
   /// JSON-like list/map data structures.
-  dynamic get extraData;
+  Object? get extraData;
 }
 
 /// A language version.

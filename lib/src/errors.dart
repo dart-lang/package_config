@@ -29,4 +29,4 @@ class PackageConfigFormatException extends FormatException
 }
 
 /// The default `onError` handler.
-void /*Never*/ throwError(Object error) => throw error;
+Never throwError(Object error) => throw error;
