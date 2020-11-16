@@ -15,6 +15,21 @@ import "packages_file.dart" as packages_file;
 import "util.dart";
 import "util_io.dart";
 
+/// Name of directory where Dart tools store their configuration.
+///
+/// Directory is created in the package root directory.
+const dartToolDirName = ".dart_tool";
+
+/// Name of file containing new package configuration data.
+///
+/// File is stored in the dart tool directory.
+const packageConfigFileName = "package_config.json";
+
+/// Name of file containing legacy package configuration data.
+///
+/// File is stored in the package root directory.
+const packagesFileName = ".packages";
+
 /// Reads a package configuration file.
 ///
 /// Detects whether the [file] is a version one `.packages` file or
@@ -29,9 +44,9 @@ import "util_io.dart";
 /// The file must exist and be a normal file.
 Future<PackageConfig> readAnyConfigFile(
     File file, bool preferNewest, void onError(Object error)) async {
-  if (preferNewest && fileName(file.path) == ".packages") {
-    var alternateFile =
-        File(pathJoin(dirName(file.path), ".dart_tool", "package_config.json"));
+  if (preferNewest && fileName(file.path) == packagesFileName) {
+    var alternateFile = File(
+        pathJoin(dirName(file.path), dartToolDirName, packageConfigFileName));
     if (alternateFile.existsSync()) {
       return await readPackageConfigJsonFile(alternateFile, onError);
     }
@@ -62,8 +77,8 @@ Future<PackageConfig> readAnyConfigFileUri(
     }
     loader = defaultLoader;
   }
-  if (preferNewest && file.pathSegments.last == ".packages") {
-    var alternateFile = file.resolve(".dart_tool/package_config.json");
+  if (preferNewest && file.pathSegments.last == packagesFileName) {
+    var alternateFile = file.resolve("$dartToolDirName/$packageConfigFileName");
     Uint8List? bytes;
     try {
       bytes = await loader(alternateFile);
@@ -131,15 +146,17 @@ Future<PackageConfig> readDotPackagesFile(
 Future<void> writePackageConfigJsonFile(
     PackageConfig config, Directory targetDirectory) async {
   // Write .dart_tool/package_config.json first.
-  var file =
-      File(pathJoin(targetDirectory.path, ".dart_tool", "package_config.json"));
+  var dartToolDir = Directory(pathJoin(targetDirectory.path, dartToolDirName));
+  await dartToolDir.create(recursive: true);
+  var file = File(pathJoin(dartToolDir.path, packageConfigFileName));
   var baseUri = file.uri;
+
   var sink = file.openWrite(encoding: utf8);
   writePackageConfigJsonUtf8(config, baseUri, sink);
   var doneJson = sink.close();
 
   // Write .packages too.
-  file = File(pathJoin(targetDirectory.path, ".packages"));
+  file = File(pathJoin(targetDirectory.path, packagesFileName));
   baseUri = file.uri;
   sink = file.openWrite(encoding: utf8);
   writeDotPackages(config, baseUri, sink);
