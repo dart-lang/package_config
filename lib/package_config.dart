@@ -3,7 +3,10 @@
 // BSD-style license that can be found in the LICENSE file.
 
 /// A package configuration is a way to assign file paths to package URIs,
-/// and vice-versa,
+/// and vice-versa.
+///
+/// This package provides functionality to find, read and write package
+/// configurations in the [specified format](https://github.com/dart-lang/language/blob/master/accepted/future-releases/language-versioning/package-config-file-v2.md).
 library package_config.package_config;
 
 import "dart:io" show File, Directory;

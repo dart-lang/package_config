@@ -254,7 +254,7 @@ abstract class Package {
   /// with a path ending in `/`,
   /// and with a location which is a subdirectory
   /// of the [root], or the same as the [root].
-  Uri? get packageUriRoot;
+  Uri get packageUriRoot;
 
   /// The default language version associated with this package.
   ///
@@ -263,12 +263,16 @@ abstract class Package {
   /// Dart files in the package.
   /// A package version is defined by two non-negative numbers,
   /// the *major* and *minor* version numbers.
+  ///
+  /// A package may have no language version associated with it
+  /// in the package configuration, in which case tools should
+  /// use a default behavior for the package.
   LanguageVersion? get languageVersion;
 
   /// Extra data associated with the specific package.
   ///
   /// The data may be in any format, depending on who introduced it.
-  /// The standard `packjage_config.json` file storage will only store
+  /// The standard `package_config.json` file storage will only store
   /// JSON-like list/map data structures.
   Object? get extraData;
 }

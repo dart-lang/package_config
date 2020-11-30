@@ -125,7 +125,7 @@ class SimplePackageConfig implements PackageConfig {
 
   Uri? resolve(Uri packageUri) {
     var packageName = checkValidPackageUri(packageUri, "packageUri");
-    return _packages[packageName]?.packageUriRoot?.resolveUri(
+    return _packages[packageName]?.packageUriRoot.resolveUri(
         Uri(path: packageUri.path.substring(packageName.length + 1)));
   }
 
@@ -156,7 +156,7 @@ class SimplePackageConfig implements PackageConfig {
 class SimplePackage implements Package {
   final String name;
   final Uri root;
-  final Uri? packageUriRoot;
+  final Uri packageUriRoot;
   final LanguageVersion? languageVersion;
   final Object? extraData;
 
