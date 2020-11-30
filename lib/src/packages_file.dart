@@ -173,7 +173,7 @@ void write(StringSink output, PackageConfig config,
   }
   for (var package in config.packages) {
     var packageName = package.name;
-    var uri = package.packageUriRoot!;
+    var uri = package.packageUriRoot;
     // Validate packageName.
     if (!isValidPackageName(packageName)) {
       throw PackageConfigArgumentError(

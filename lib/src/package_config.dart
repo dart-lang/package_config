@@ -67,7 +67,7 @@ abstract class PackageConfig {
   /// the configuration are reported by calling [onError] instead of
   /// throwing, and parser makes a *best effort* attempt to continue
   /// despite the error. The input must still be valid JSON.
-  /// The result may be a [PackageConfig.empty] if there is no way to
+  /// The result may be [PackageConfig.empty] if there is no way to
   /// extract useful information from the bytes.
   static PackageConfig parseBytes(Uint8List bytes, Uri baseUri,
           {void onError(Object error)?}) =>
@@ -87,7 +87,7 @@ abstract class PackageConfig {
   /// the configuration are reported by calling [onError] instead of
   /// throwing, and parser makes a *best effort* attempt to continue
   /// despite the error. The input must still be valid JSON.
-  /// The result may be a [PackageConfig.empty] if there is no way to
+  /// The result may be [PackageConfig.empty] if there is no way to
   /// extract useful information from the bytes.
   static PackageConfig parseString(String configuration, Uri baseUri,
           {void onError(Object error)?}) =>
@@ -108,7 +108,7 @@ abstract class PackageConfig {
   /// the configuration are reported by calling [onError] instead of
   /// throwing, and parser makes a *best effort* attempt to continue
   /// despite the error. The input must still be valid JSON.
-  /// The result may be a [PackageConfig.empty] if there is no way to
+  /// The result may be [PackageConfig.empty] if there is no way to
   /// extract useful information from the bytes.
   static PackageConfig parseJson(Object? jsonData, Uri baseUri,
           {void onError(Object error)?}) =>
