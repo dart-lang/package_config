@@ -35,6 +35,10 @@ dependency_overrides:
     git:
       url: git://github.com/dart-lang/build.git
       path: build_runner_core
+  build_test:
+    git:
+      url: git://github.com/dart-lang/build.git
+      path: build_test
   coverage:
     git: git://github.com/dart-lang/coverage.git
   test:
