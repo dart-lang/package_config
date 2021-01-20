@@ -2,6 +2,9 @@
 // for details. All rights reserved. Use of this source code is governed by a
 // BSD-style license that can be found in the LICENSE file.
 
+import 'dart:convert';
+import 'dart:io';
+
 import "package:package_config/package_config_types.dart";
 import "package:test/test.dart";
 import "src/util.dart";
@@ -138,6 +141,19 @@ void main() {
       expect(single.resolve(pkg("a", "b")), isNull);
       var resolved = single.resolve(pkg("name", "a/b"));
       expect(resolved, root.resolve("a/b"));
+    });
+  });
+
+  test("PackageConfig.writeString()", () {
+    var package = Package("name", root);
+    var original = PackageConfig([package], extraData: unique);
+    var buffer = StringBuffer();
+    PackageConfig.writeString(original, buffer);
+    expect(json.decode(buffer.toString()), {
+      "configVersion": 2,
+      "packages": [
+        {"name": "name", "rootUri": "file:///tmp/root/"}
+      ]
     });
   });
 }

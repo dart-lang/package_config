@@ -232,7 +232,7 @@ void writePackageConfigJsonString(
     PackageConfig config, Uri? baseUri, StringSink output) {
   // Can be optimized.
   var data = packageConfigToJson(config, baseUri);
-  output.write(JsonEncoder.withIndent("  ").convert(data) as Uint8List);
+  output.write(JsonEncoder.withIndent("  ").convert(data));
 }
 
 Map<String, Object?> packageConfigToJson(PackageConfig config, Uri? baseUri) =>
