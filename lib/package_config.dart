@@ -45,6 +45,11 @@ Future<PackageConfig> loadPackageConfig(File file,
         {bool preferNewest = true, void onError(Object error)?}) =>
     readAnyConfigFile(file, preferNewest, onError ?? throwError);
 
+/// Like [loadPackageConfig] but synchronously
+PackageConfig loadPackageConfigSync(File file,
+        {bool preferNewest = true, void onError(Object error)?}) =>
+    readAnyConfigFileSync(file, preferNewest, onError ?? throwError);
+
 /// Reads a specific package configuration URI.
 ///
 /// The file of the URI must exist and be readable.

@@ -61,6 +61,26 @@ Future<PackageConfig> readAnyConfigFile(
   return parseAnyConfigFile(bytes, file.uri, onError);
 }
 
+/// Like [readAnyConfigFile] but synchronously
+PackageConfig readAnyConfigFileSync(
+    File file, bool preferNewest, void onError(Object error)) {
+  if (preferNewest && fileName(file.path) == packagesFileName) {
+    var alternateFile = File(
+        pathJoin(dirName(file.path), dartToolDirName, packageConfigFileName));
+    if (alternateFile.existsSync()) {
+      return readPackageConfigJsonFileSync(alternateFile, onError);
+    }
+  }
+  Uint8List bytes;
+  try {
+    bytes = file.readAsBytesSync();
+  } catch (e) {
+    onError(e);
+    return const SimplePackageConfig.empty();
+  }
+  return parseAnyConfigFile(bytes, file.uri, onError);
+}
+
 /// Like [readAnyConfigFile] but uses a URI and an optional loader.
 Future<PackageConfig> readAnyConfigFileUri(
     Uri file,
@@ -124,6 +144,18 @@ Future<PackageConfig> readPackageConfigJsonFile(
   Uint8List bytes;
   try {
     bytes = await file.readAsBytes();
+  } catch (error) {
+    onError(error);
+    return const SimplePackageConfig.empty();
+  }
+  return parsePackageConfigBytes(bytes, file.uri, onError);
+}
+
+PackageConfig readPackageConfigJsonFileSync(
+    File file, void onError(Object error)) {
+  Uint8List bytes;
+  try {
+    bytes = file.readAsBytesSync();
   } catch (error) {
     onError(error);
     return const SimplePackageConfig.empty();
