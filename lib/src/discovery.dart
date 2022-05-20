@@ -33,6 +33,10 @@ final Uri parentPath = Uri(path: '..');
 /// If any of these tests succeed, a `PackageConfig` class is returned.
 /// Returns `null` if no configuration was found. If a configuration
 /// is needed, then the caller can supply [PackageConfig.empty].
+///
+/// If [minVersion] is greated than 1, `.packages` files are ignored.
+/// If [minVersion] is greater than the version read from the
+/// `package_config.json` file, it too is ignored.
 Future<PackageConfig?> findPackageConfig(Directory baseDirectory,
     int minVersion, bool recursive, void Function(Object error) onError) async {
   var directory = baseDirectory;
@@ -112,7 +116,7 @@ Future<PackageConfig?> findPackageConfigUri(
 ///
 /// If [minVersion] is greated than 1, `.packages` files are ignored.
 /// If [minVersion] is greater than the version read from the
-/// `pacakage_config.json` file, it too is ignored.
+/// `package_config.json` file, it too is ignored.
 Future<PackageConfig?> findPackagConfigInDirectory(Directory directory,
     int minVersion, void Function(Object error) onError) async {
   var packageConfigFile = await checkForPackageConfigJsonFile(directory);
