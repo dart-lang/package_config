@@ -55,6 +55,9 @@ jobs:
       - id: install
         name: Install dependencies
         run: dart pub get
-      - name: Run tests
-        run: dart run build_runner test -- -p chrome,vm
+      - name: Run web tests
+        run: dart run build_runner test -- -p chrome
+        if: always() && steps.install.outcome == 'success'
+      - name: Run vm tests
+        run: dart test
         if: always() && steps.install.outcome == 'success'
