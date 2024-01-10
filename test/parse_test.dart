@@ -308,8 +308,11 @@ void main() {
           {'name': 'foo', 'rootUri': 'file:///C:/Foo/', 'packageUri': 'lib/'},
         ]
       }));
-      var config = parsePackageConfigBytes(configBytes as Uint8List,
-          Uri.parse('file:///C:/tmp/.dart_tool/file.dart'), throwError);
+      var config = parsePackageConfigBytes(
+          // ignore: unnecessary_cast
+          configBytes as Uint8List,
+          Uri.parse('file:///C:/tmp/.dart_tool/file.dart'),
+          throwError);
       expect(config.version, 2);
       expect(
           config.packageOf(Uri.parse('file:///C:/foo/lala/lala.dart')), null);
