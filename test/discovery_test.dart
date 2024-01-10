@@ -6,8 +6,9 @@
 library package_config.discovery_test;
 
 import 'dart:io';
-import 'package:test/test.dart';
+
 import 'package:package_config/package_config.dart';
+import 'package:test/test.dart';
 
 import 'src/util.dart';
 import 'src/util_io.dart';
@@ -58,7 +59,7 @@ void main() {
     fileTest('package_config.json', {
       '.packages': 'invalid .packages file',
       'script.dart': 'main(){}',
-      'packages': {'shouldNotBeFound': {}},
+      'packages': {'shouldNotBeFound': <Never>{}},
       '.dart_tool': {
         'package_config.json': packageConfigFile,
       }
@@ -72,7 +73,7 @@ void main() {
     fileTest('.packages', {
       '.packages': packagesFile,
       'script.dart': 'main(){}',
-      'packages': {'shouldNotBeFound': {}}
+      'packages': {'shouldNotBeFound': <Object, Object>{}}
     }, (Directory directory) async {
       var config = (await findPackageConfig(directory))!;
       expect(config.version, 1); // Found .packages file.
@@ -107,7 +108,7 @@ void main() {
     // Does not find a packages/ directory, and returns null if nothing found.
     fileTest('package directory packages not supported', {
       'packages': {
-        'foo': {},
+        'foo': <String, dynamic>{},
       }
     }, (Directory directory) async {
       var config = await findPackageConfig(directory);
@@ -118,15 +119,13 @@ void main() {
       fileTest('invalid .packages', {
         '.packages': 'not a .packages file',
       }, (Directory directory) {
-        expect(findPackageConfig(directory),
-            throwsA(TypeMatcher<FormatException>()));
+        expect(findPackageConfig(directory), throwsA(isA<FormatException>()));
       });
 
       fileTest('invalid .packages as JSON', {
         '.packages': packageConfigFile,
       }, (Directory directory) {
-        expect(findPackageConfig(directory),
-            throwsA(TypeMatcher<FormatException>()));
+        expect(findPackageConfig(directory), throwsA(isA<FormatException>()));
       });
 
       fileTest('invalid .packages', {
@@ -134,8 +133,7 @@ void main() {
           'package_config.json': 'not a JSON file',
         }
       }, (Directory directory) {
-        expect(findPackageConfig(directory),
-            throwsA(TypeMatcher<FormatException>()));
+        expect(findPackageConfig(directory), throwsA(isA<FormatException>()));
       });
 
       fileTest('invalid .packages as INI', {
@@ -143,8 +141,7 @@ void main() {
           'package_config.json': packagesFile,
         }
       }, (Directory directory) {
-        expect(findPackageConfig(directory),
-            throwsA(TypeMatcher<FormatException>()));
+        expect(findPackageConfig(directory), throwsA(isA<FormatException>()));
       });
     });
 
@@ -207,7 +204,7 @@ void main() {
       '.packages': packagesFile,
       'script.dart': 'main(){}'
     }, (Directory directory) async {
-      var config = (await findPackageConfig(directory, minVersion: 2));
+      var config = await findPackageConfig(directory, minVersion: 2);
       expect(config, null);
     });
 
@@ -303,8 +300,8 @@ void main() {
 
     fileTest('no config found', {}, (Directory directory) {
       var file = dirFile(directory, 'anyname');
-      expect(() => loadPackageConfig(file),
-          throwsA(TypeMatcher<FileSystemException>()));
+      expect(
+          () => loadPackageConfig(file), throwsA(isA<FileSystemException>()));
     });
 
     fileTest('no config found, handled', {}, (Directory directory) async {
