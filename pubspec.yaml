@@ -15,3 +15,11 @@ dev_dependencies:
   build_web_compilers: ^4.0.0
   dart_flutter_team_lints: ^2.0.0
   test: ^1.16.0
+
+# TODO: Remove once the fix for precompiled mode is published.
+dependency_overrides:
+  test:
+    git:
+      url: https://github.com/dart-lang/test.git
+      ref: master
+      path: pkgs/test
