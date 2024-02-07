@@ -107,6 +107,13 @@ PackageConfig parse(
           'Package URI as location for package', source, separatorIndex + 1));
       continue;
     }
+    if (packageLocation.scheme.startsWith(dartMacroSchemePrefix)) {
+      onError(PackageConfigFormatException(
+          'Macro-generated URI as location for package',
+          source,
+          separatorIndex + 1));
+      continue;
+    }
     var path = packageLocation.path;
     if (!path.endsWith('/')) {
       path += '/';
@@ -120,6 +127,8 @@ PackageConfig parse(
     var rootUri = packageLocation;
     if (path.endsWith('/lib/')) {
       // Assume default Pub package layout. Include package itself in root.
+      // TODO(lrn): Stop doing this. Expect the package file to add a root
+      // if it wants a root.
       rootUri =
           packageLocation.replace(path: path.substring(0, path.length - 4));
     }

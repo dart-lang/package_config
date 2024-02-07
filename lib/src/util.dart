@@ -40,14 +40,39 @@ int checkPackageName(String string) {
   return -1;
 }
 
+/// Dart macro generated augmentation file scheme for a package library.
+const dartMacroSchemePrefix = 'dart-macro+';
+
+/// Dart macro generated augmentation file scheme for a package library.
+const dartMacroPackageScheme = 'dart-macro+package';
+
+/// Dart macro generated augmentation file scheme for a file library.
+const dartMacroFileScheme = 'dart-macro+file';
+
+Map<String, String> _macroSchemeTranslation = {
+  dartMacroPackageScheme: 'package',
+  dartMacroFileScheme: 'file',
+};
+
+/// Convert a `dart-macro+` scheme to the underlying scheme.
+String schemeFromMacroScheme(String macroScheme) {
+  assert(macroScheme.startsWith(dartMacroSchemePrefix));
+  return _macroSchemeTranslation[macroScheme] ??=
+      macroScheme.substring(dartMacroSchemePrefix.length);
+}
+
 /// Validate that a [Uri] is a valid `package:` URI.
 ///
 /// Used to validate user input.
 ///
 /// Returns the package name extracted from the package URI,
 /// which is the path segment between `package:` and the first `/`.
-String checkValidPackageUri(Uri packageUri, String name) {
-  if (packageUri.scheme != 'package') {
+///
+/// If [allowMacro] is `true`, the scheme may also be `dart-macro+package`.
+String checkValidPackageUri(Uri packageUri, String name,
+    {bool allowMacro = false}) {
+  if (!packageUri.isScheme('package') &&
+      !(allowMacro && packageUri.isScheme(dartMacroPackageScheme))) {
     throw PackageConfigArgumentError(packageUri, name, 'Not a package: URI');
   }
   if (packageUri.hasAuthority) {
@@ -81,7 +106,7 @@ String checkValidPackageUri(Uri packageUri, String name) {
   if (badIndex >= 0) {
     if (packageName.isEmpty) {
       throw PackageConfigArgumentError(
-          packageUri, name, 'Package names mus be non-empty');
+          packageUri, name, 'Package names must be non-empty');
     }
     if (badIndex == packageName.length) {
       throw PackageConfigArgumentError(packageUri, name,
