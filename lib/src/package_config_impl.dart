@@ -142,7 +142,16 @@ class SimplePackageConfig implements PackageConfig {
   Package? operator [](String packageName) => _packages[packageName];
 
   @override
-  Package? packageOf(Uri file) => _packageTree.packageOf(file);
+  Package? packageOf(Uri uri) {
+    if (uri.isScheme('package') || uri.isScheme('dart-macro+package')) {
+      // Directly specifies its package.
+      var packageName = checkValidPackageUri(uri, 'uri', allowMacro: true);
+      return _packages[packageName];
+    }
+
+    /// Try finding a prefix in the package-config's `rootUri`s.
+    return _packageTree.packageOf(uri);
+  }
 
   @override
   Uri? resolve(Uri packageUri) {
@@ -161,14 +170,22 @@ class SimplePackageConfig implements PackageConfig {
       throw PackageConfigArgumentError(nonPackageUri, 'nonPackageUri',
           'Must not have query or fragment part');
     }
+    if (nonPackageUri.scheme.startsWith(dartMacroSchemePrefix)) {
+      // A macro-generated file has no `package:` URI.
+      return null;
+    }
     // Find package that file belongs to.
     var package = _packageTree.packageOf(nonPackageUri);
     if (package == null) return null;
-    // Check if it is inside the package URI root.
+    // Check if it is inside the package URI root (usually `lib/`).
     var path = nonPackageUri.toString();
-    var root = package.packageUriRoot.toString();
-    if (_beginsWith(package.root.toString().length, root, path)) {
-      var rest = path.substring(root.length);
+    var packageRoot = package.root.toString();
+    var packageUriRoot = package.packageUriRoot.toString();
+    assert(packageUriRoot.startsWith(packageRoot));
+    // This prefix was correctly matched by `packageOf`.
+    var matchedPrefix = packageRoot.length;
+    if (_beginsWith(matchedPrefix, packageUriRoot, matchedPrefix, path)) {
+      var rest = path.substring(packageUriRoot.length);
       return Uri(scheme: 'package', path: '${package.name}/$rest');
     }
     return null;
@@ -428,7 +445,7 @@ class TriePackageTree implements PackageTree {
       }
       // 2) The existing package has a packageUriRoot thats inside the
       //    root of the new package.
-      if (_beginsWith(0, newPackage.root.toString(),
+      if (_beginsWith(0, newPackage.root.toString(), 0,
           existingPackage.packageUriRoot.toString())) {
         onError(ConflictException(
             newPackage, existingPackage, ConflictType.interleaving));
@@ -439,7 +456,7 @@ class TriePackageTree implements PackageTree {
       // it thouh.
       // 3) The new package is inside the packageUriRoot of existing package.
       if (_disallowPackagesInsidePackageUriRoot) {
-        if (_beginsWith(0, existingPackage.packageUriRoot.toString(),
+        if (_beginsWith(0, existingPackage.packageUriRoot.toString(), 0,
             newPackage.root.toString())) {
           onError(ConflictException(
               newPackage, existingPackage, ConflictType.insidePackageRoot));
@@ -479,16 +496,18 @@ class TriePackageTree implements PackageTree {
     _packages.add(newPackage);
   }
 
-  bool _isMatch(
-      String path, _PackageTrieNode node, List<SimplePackage> potential) {
+  /// Matches `path.substring(offset)` against the strings of `node`.
+  bool _isMatch(String path, int pathStart, _PackageTrieNode node,
+      List<SimplePackage> potential) {
     var currentPackage = node.package;
     if (currentPackage != null) {
       var currentPackageRootLength = currentPackage.root.toString().length;
-      if (path.length == currentPackageRootLength) return true;
+      if (path.length - pathStart == currentPackageRootLength) return true;
       var currentPackageUriRoot = currentPackage.packageUriRoot.toString();
       // Is [file] inside the package root of [currentPackage]?
       if (currentPackageUriRoot.length == currentPackageRootLength ||
-          _beginsWith(currentPackageRootLength, currentPackageUriRoot, path)) {
+          _beginsWith(currentPackageRootLength, currentPackageUriRoot,
+              currentPackageRootLength + pathStart, path)) {
         return true;
       }
       potential.add(currentPackage);
@@ -498,11 +517,18 @@ class TriePackageTree implements PackageTree {
 
   @override
   SimplePackage? packageOf(Uri file) {
-    var currentTrieNode = _map[file.scheme];
+    var scheme = file.scheme;
+    var pathStart = 0;
+    if (scheme.startsWith(dartMacroSchemePrefix)) {
+      scheme = schemeFromMacroScheme(scheme);
+      pathStart = dartMacroSchemePrefix.length;
+    }
+    var currentTrieNode = _map[scheme];
     if (currentTrieNode == null) return null;
     var path = file.toString();
+    assert(pathStart == 0 || path.startsWith(dartMacroSchemePrefix));
     var potential = <SimplePackage>[];
-    if (_isMatch(path, currentTrieNode, potential)) {
+    if (_isMatch(path, pathStart, currentTrieNode, potential)) {
       return currentTrieNode.package;
     }
     var segments = file.pathSegments;
@@ -511,7 +537,7 @@ class TriePackageTree implements PackageTree {
       var segment = segments[i];
       currentTrieNode = currentTrieNode!.map[segment];
       if (currentTrieNode == null) break;
-      if (_isMatch(path, currentTrieNode, potential)) {
+      if (_isMatch(path, pathStart, currentTrieNode, potential)) {
         return currentTrieNode.package;
       }
     }
@@ -532,12 +558,15 @@ class EmptyPackageTree implements PackageTree {
 
 /// Checks whether [longerPath] begins with [parentPath].
 ///
-/// Skips checking the [start] first characters which are assumed to
-/// already have been matched.
-bool _beginsWith(int start, String parentPath, String longerPath) {
-  if (longerPath.length < parentPath.length) return false;
-  for (var i = start; i < parentPath.length; i++) {
-    if (longerPath.codeUnitAt(i) != parentPath.codeUnitAt(i)) return false;
+/// Skips checking the [parentStart] first characters which are assumed to
+/// already have been matched up to [longerStart].
+bool _beginsWith(
+    int parentStart, String parentPath, int longerStart, String longerPath) {
+  if (longerPath.length - longerStart < parentPath.length - parentStart) {
+    return false;
+  }
+  for (var i = parentStart, j = longerStart; i < parentPath.length; i++, j++) {
+    if (longerPath.codeUnitAt(j) != parentPath.codeUnitAt(i)) return false;
   }
   return true;
 }

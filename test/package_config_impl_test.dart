@@ -183,6 +183,63 @@ void main() {
       'extra': 'data',
     });
   });
+
+  group('macro-generated', () {
+    const macroPrefix = 'dart-macro+';
+    var config = PackageConfig([
+      Package('foo', Uri.parse('file:///pkg/foo/'),
+          packageUriRoot: Uri.parse('file:///pkg/foo/lib/'),
+          languageVersion: LanguageVersion(3, 6)),
+      Package('bar', Uri.parse('file:///pkg/bar/'),
+          packageUriRoot: Uri.parse('file:///pkg/bar/lib/')),
+    ]);
+    test('package URI', () {
+      var uri = Uri.parse('${macroPrefix}package:foo/bar.dart');
+      // The macro-package-URI belongs to the package
+      // of the underlying `package:` URI.
+      var packageOf = config.packageOf(uri);
+      expect(packageOf, isNotNull);
+      expect(packageOf!.name, 'foo');
+
+      // The URI is not a package URI.
+      expect(() => config.resolve(uri), throwsArgumentError);
+
+      // And it has no corresponding package URI.
+      var toPackageUri = config.toPackageUri(uri);
+      expect(toPackageUri, null);
+    });
+
+    test('non-package URI outside lib/', () {
+      var uri = Uri.parse('${macroPrefix}file:///pkg/foo/tool/tool.dart');
+
+      var packageOf = config.packageOf(uri);
+      expect(packageOf, isNotNull);
+      expect(packageOf!.name, 'foo');
+
+      // The URI is not a package URI.
+      expect(() => config.resolve(uri), throwsArgumentError);
+
+      // And it has no corresponding package URI.
+      var toPackageUri = config.toPackageUri(uri);
+      expect(toPackageUri, null);
+    });
+
+    test('non-package URI inside lib/', () {
+      var uri = Uri.parse('${macroPrefix}file:///pkg/foo/lib/file.dart');
+
+      var packageOf = config.packageOf(uri);
+      expect(packageOf, isNotNull);
+      expect(packageOf!.name, 'foo');
+
+      // The URI is not a package URI.
+      expect(() => config.resolve(uri), throwsArgumentError);
+
+      // And it has no corresponding package URI, even if it
+      // "belongs" inside `lib/`.
+      var toPackageUri = config.toPackageUri(uri);
+      expect(toPackageUri, null);
+    });
+  });
 }
 
 final Matcher throwsPackageConfigError = throwsA(isA<PackageConfigError>());

@@ -1,6 +1,8 @@
-## 2.1.1-wip
+## 2.2.0-wip
 
 - Require Dart 3.2
+- Add support for `dart-macro+` scheme prefixes.
+  Recognizes these as belonging to the same package as their unprefixed URIs.
 
 ## 2.1.0
 
