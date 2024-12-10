@@ -1,3 +1,6 @@
+> [!IMPORTANT]  
+> This repo has moved to https://github.com/dart-lang/tools/tree/main/pkgs/package_config
+
 [![Build Status](https://github.com/dart-lang/package_config/workflows/Dart%20CI/badge.svg)](https://github.com/dart-lang/package_config/actions?query=workflow%3A"Dart+CI"+branch%3Amaster)
 [![pub package](https://img.shields.io/pub/v/package_config.svg)](https://pub.dev/packages/package_config)
 [![package publisher](https://img.shields.io/pub/publisher/package_config.svg)](https://pub.dev/packages/package_config/publisher)
